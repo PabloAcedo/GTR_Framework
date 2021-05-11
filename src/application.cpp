@@ -74,6 +74,7 @@ Application::Application(int window_width, int window_height, SDL_Window* window
 
 	//This class will be the one in charge of rendering all 
 	renderer = new GTR::Renderer(); //here so we have opengl ready in constructor
+	renderer->current_mode = 1; //forward multipass
 
 	//hide the cursor
 	SDL_ShowCursor(!mouse_locked); //hide or show the mouse
@@ -85,9 +86,6 @@ void Application::render(void)
 	//be sure no errors present in opengl before start
 	checkGLErrors();
 
-	//set the camera as default (used by some functions in the framework)
-	camera->enable();
-
 	//set default flags
 	glDisable(GL_BLEND);
     
@@ -98,15 +96,16 @@ void Application::render(void)
 	else
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-	//lets render something
-	//Matrix44 model;
-	//renderer->renderPrefab( model, prefab, camera );
+	renderer->renderShadowMaps(scene);
 
+	//set the camera as default (used by some functions in the framework)
+	camera->enable();
 	renderer->renderScene(scene, camera);
+	renderer->displayShadowMap();
 
 	//Draw the floor grid, helpful to have a reference point
 	if(render_debug)
-		drawGrid();
+		//drawGrid();
 
     glDisable(GL_DEPTH_TEST);
     //render anything in the gui after this
@@ -246,6 +245,9 @@ void Application::renderDebugGUI(void)
 	ImGui::Checkbox("Wireframe", &render_wireframe);
 	ImGui::ColorEdit3("BG color", scene->background_color.v);
 	ImGui::ColorEdit3("Ambient Light", scene->ambient_light.v);
+
+	ImGui::Combo("Render Mode", &renderer->current_mode, renderer->optionsText, IM_ARRAYSIZE(renderer->optionsText));
+	renderer->changeRenderMode();
 
 	//add info to the debug panel about the camera
 	if (ImGui::TreeNode(camera, "Camera")) {

@@ -111,6 +111,9 @@
     <ClCompile Include="..\..\src\extra\coldet\tritri.cpp">
       <Filter>extra\coldet</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\LightEntity.cpp">
+      <Filter>pipeline</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\extra\textparser.h">
@@ -218,6 +221,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\extra\cJSON.h">
       <Filter>extra</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LightEntity.h">
+      <Filter>pipeline</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

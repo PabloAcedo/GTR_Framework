@@ -8,10 +8,28 @@
 #include "material.h"
 #include "utils.h"
 #include "scene.h"
+#include "fbo.h"
+#include "application.h"
 #include "extra/hdre.h"
+#include <algorithm>
 
 
 using namespace GTR;
+
+RenderCall::RenderCall(Matrix44 model, Mesh* mesh, Material* material) {
+	this->model = model;
+	this->mesh = mesh;
+	this->material = material;
+	distance2Cam = 0.0;
+}
+
+bool sortByAlpha(RenderCall* i, RenderCall* j) {
+	return(i->material->alpha_mode < j->material->alpha_mode);
+}
+
+bool sortByDistance(RenderCall* i, RenderCall* j) {
+	return(i->distance2Cam > j->distance2Cam);
+}
 
 void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 {
@@ -37,6 +55,19 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 				renderPrefab(ent->model, pent->prefab, camera);
 		}
 	}
+
+	if (renderingShadows)
+		return;
+
+	//sort the rendercalls
+	std::sort(renderCalls.begin(), renderCalls.end(), sortByDistance);
+
+	//render
+	for (int i = 0; i < renderCalls.size(); i++) {
+		renderMeshWithMaterial(renderCalls[i]->model, renderCalls[i]->mesh, renderCalls[i]->material, camera);
+	}
+
+	renderCalls.clear();
 }
 
 //renders all the prefab
@@ -65,9 +96,16 @@ void Renderer::renderNode(const Matrix44& prefab_model, GTR::Node* node, Camera*
 		//if bounding box is inside the camera frustum then the object is probably visible
 		if (camera->testBoxInFrustum(world_bounding.center, world_bounding.halfsize) )
 		{
-			//render node mesh
-			renderMeshWithMaterial( node_model, node->mesh, node->material, camera );
-			//node->mesh->renderBounding(node_model, true);
+			if (node->material->alpha_mode == BLEND && !renderingShadows) {
+				RenderCall* rc = new RenderCall(node_model, node->mesh, node->material);
+				rc->distance2Cam = world_bounding.center.distance(camera->eye);
+				renderCalls.push_back(rc);
+			}
+			else {
+				//render node mesh
+				renderMeshWithMaterial(node_model, node->mesh, node->material, camera);
+				//node->mesh->renderBounding(node_model, true);
+			}
 		}
 	}
 
@@ -86,15 +124,6 @@ void Renderer::renderMeshWithMaterial(const Matrix44 model, Mesh* mesh, GTR::Mat
 
 	//define locals to simplify coding
 	Shader* shader = NULL;
-	Texture* texture = NULL;
-
-	texture = material->color_texture.texture;
-	//texture = material->emissive_texture;
-	//texture = material->metallic_roughness_texture;
-	//texture = material->normal_texture;
-	//texture = material->occlusion_texture;
-	if (texture == NULL)
-		texture = Texture::getWhiteTexture(); //a 1x1 white texture
 
 	//select the blending
 	if (material->alpha_mode == GTR::eAlphaMode::BLEND)
@@ -112,40 +141,246 @@ void Renderer::renderMeshWithMaterial(const Matrix44 model, Mesh* mesh, GTR::Mat
 		glEnable(GL_CULL_FACE);
     assert(glGetError() == GL_NO_ERROR);
 
-	//chose a shader
-	shader = Shader::Get("texture");
+	if (!renderingShadows) {
+		if (render_mode == GTR::eRenderMode::TEXTURE) {
+			shader = Shader::Get("texture");
+			if (shader == NULL)
+				return;
+			shader->enable();
+			commonUniforms(shader, model, material, camera, mesh, false);
+			//disable shader
+			shader->disable();
+		}
+		else if (render_mode == GTR::eRenderMode::LIGHT_MULTI) {
+			shader = Shader::Get("multi_pass");
+			if (shader == NULL)
+				return;
+			shader->enable();
+			multipassRendering(shader, model, material, camera, mesh);
+			//disable shader
+			shader->disable();
+		}
+		else if (render_mode == GTR::eRenderMode::LIGHT_SINGLE) {
+			shader = Shader::Get("single_pass");
+			if (shader == NULL)
+				return;
+			shader->enable();
+			singlepassUniforms(shader, model, material, camera, mesh);
+			shader->disable();
+		}
+	}
+	else {
+		if (material->alpha_mode == GTR::eAlphaMode::BLEND) return;
+		if (material->alpha_mode == GTR::eAlphaMode::MASK) {
+			shader = Shader::Get("texture");
+		}
+		else {
+			shader = Shader::Get("flat");
+		}
+		if (shader == NULL) return;
+		shader->enable();
+		commonUniforms(shader, model, material, camera, mesh, false);
+		shader->disable();
+	}
 
-    assert(glGetError() == GL_NO_ERROR);
+	//set the render state as it was before to avoid problems with future renders
+	glDisable(GL_BLEND);
+	glDepthFunc(GL_LESS);
+}
 
-	//no shader? then nothing to render
-	if (!shader)
-		return;
-	shader->enable();
-
+void Renderer::commonUniforms(Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh, bool fromOther) {
+	Texture* texture = NULL;
 	//upload uniforms
 	shader->setUniform("u_viewprojection", camera->viewprojection_matrix);
 	shader->setUniform("u_camera_position", camera->eye);
-	shader->setUniform("u_model", model );
+	shader->setUniform("u_model", model);
 	float t = getTime();
-	shader->setUniform("u_time", t );
+	shader->setUniform("u_time", t);
 
 	shader->setUniform("u_color", material->color);
-	if(texture)
+	shader->setUniform("u_alpha_cutoff", material->alpha_mode == GTR::eAlphaMode::MASK ? material->alpha_cutoff : 0);
+
+	texture = material->color_texture.texture;
+	if (texture)
 		shader->setUniform("u_texture", texture, 0);
+
+	if (!fromOther)
+		mesh->render(GL_TRIANGLES);
+}
+
+void Renderer::uploadExtraMap(Shader*& shader, Texture* texture, const char* uniform_name, const char* bool_name, int tex_slot) {
+	if (texture) {
+		shader->setUniform(uniform_name, texture, tex_slot);
+		shader->setUniform(bool_name, true);
+	}
+	else {
+		shader->setUniform(bool_name, false);
+	}
+}
+
+
+void Renderer::multipassUniforms(GTR::LightEntity* light, Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh, int iteration) {
+
+	light->lightVisible();
+
+	Texture* texture = NULL;
+
+	commonUniforms(shader, model, material, camera, mesh, true);//upload common uniforms
+
+	texture = material->emissive_texture.texture;
+	uploadExtraMap(shader, texture, "u_emissive", "u_has_emissive", 1);
+	shader->setUniform("u_iteration", iteration);
+
+	texture = material->normal_texture.texture;
+	uploadExtraMap(shader, texture, "u_normal_map", "u_has_normal", 2);
+
+	texture = material->metallic_roughness_texture.texture;
+	uploadExtraMap(shader, texture, "u_omr", "u_has_ao", 3);
+
+	if (light->light_type != POINT) {
+		//get the depth texture from the FBO
+		Texture* shadowmap = light->fbo->depth_texture;
+
+		//pass it to the shader in slot 8
+		shader->setTexture("u_shadowmap", shadowmap, 8);
+
+		//also get the viewprojection from the light
+		Matrix44 shadow_proj = light->cam->viewprojection_matrix;
+
+		//pass it to the shader
+		shader->setUniform("u_shadow_viewproj", shadow_proj);
+	}
+
 
 	//this is used to say which is the alpha threshold to what we should not paint a pixel on the screen (to cut polygons according to texture alpha)
 	shader->setUniform("u_alpha_cutoff", material->alpha_mode == GTR::eAlphaMode::MASK ? material->alpha_cutoff : 0);
 
+	//upload lights
+	if (light != NULL)
+		light->uploadUniforms(shader);
+
+	if (Scene::instance != NULL)
+		shader->setUniform("u_light_ambient", Scene::instance->ambient_light);
+
+	//do the draw call that renders the mesh into the screen
+	mesh->render(GL_TRIANGLES);
+}
+
+void Renderer::multipassRendering(Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh) {
+
+	glDepthFunc(GL_LEQUAL);
+
+	//multipass
+	for (int i = 0; i < Scene::instance->lights.size(); i++) {
+
+		if (i == 0 && material->alpha_mode != GTR::eAlphaMode::BLEND) {
+			glDisable(GL_BLEND);
+		}
+		else {
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		}
+		if (i == 0 && material->alpha_mode == GTR::eAlphaMode::BLEND) {
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		}
+		multipassUniforms(Scene::instance->lights[i], shader, model, material, camera, mesh, i);
+	}
+}
+
+void Renderer::singlepassUniforms(Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh) {
+	Texture* texture = NULL;
+
+	commonUniforms(shader, model, material, camera, mesh, true);//upload common uniforms
+
+	texture = material->emissive_texture.texture;
+	uploadExtraMap(shader, texture, "u_emissive", "u_has_emissive", 1);
+
+	texture = material->normal_texture.texture;
+	uploadExtraMap(shader, texture, "u_normal_map", "u_has_normal", 2);
+
+	texture = material->metallic_roughness_texture.texture;
+	uploadExtraMap(shader, texture, "u_omr", "u_has_ao", 3);
+
+	if (Scene::instance != NULL) {
+
+		Scene::instance->updateLights();
+
+		int num_lights = Scene::instance->lights.size();
+		shader->setUniform("u_light_ambient", Scene::instance->ambient_light);
+		shader->setUniform3Array("u_light_pos", (float*)Scene::instance->light_pos, num_lights);
+		shader->setUniform3Array("u_light_color", (float*)Scene::instance->light_color, num_lights);
+		shader->setUniform1("u_num_lights", num_lights);
+		shader->setUniform3Array("u_light_direction", (float*)Scene::instance->light_direction, num_lights);
+		shader->setUniform1Array("u_light_type", Scene::instance->light_type, num_lights);
+		shader->setUniform1Array("u_light_maxdist", (float*)Scene::instance->l_max_dist, num_lights);
+		shader->setUniform1Array("u_cosCutoff", (float*)Scene::instance->l_cone_angle, num_lights);
+		shader->setUniform1Array("u_light_intensity", (float*)Scene::instance->l_intensity, num_lights);
+		shader->setUniform1Array("u_spot_exp", (float*)Scene::instance->l_spotExp, num_lights);
+	}
+
 	//do the draw call that renders the mesh into the screen
 	mesh->render(GL_TRIANGLES);
 
-	//disable shader
-	shader->disable();
-
-	//set the render state as it was before to avoid problems with future renders
-	glDisable(GL_BLEND);
 }
 
+void Renderer::renderShadowMaps(Scene* scene) {
+	renderingShadows = true;
+	for (int i = 0; i < scene->lights.size(); i++) {
+		if (scene->lights[i]->light_type == POINT || !scene->lights[i]->visible)
+			continue;
+
+		if (scene->lights[i]->fbo == NULL) {
+			scene->lights[i]->fbo = new FBO();
+			scene->lights[i]->fbo->setDepthOnly(1024, 1024);
+		}
+
+		scene->lights[i]->fbo->bind();
+		glColorMask(false, false, false, false);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		Matrix44 model = scene->lights[i]->model;
+		scene->lights[i]->orientCam();
+		scene->lights[i]->cam->enable();
+		renderScene(scene, scene->lights[i]->cam);
+		scene->lights[i]->fbo->unbind();
+		glColorMask(true, true, true, true);
+
+	}
+	renderingShadows = false;
+}
+
+void Renderer::displayShadowMap() {
+	for (int i = 0; i < Scene::instance->lights.size(); i++) {
+		LightEntity* light = Scene::instance->lights[i];
+		if (light->show_shadowmap) {
+			Shader* shader = Shader::Get("depth");
+			shader->enable();
+			shader->setUniform("u_camera_nearfar", Vector2(light->cam->near_plane, light->cam->far_plane));
+			int w = Application::instance->window_width;
+			int h = Application::instance->window_height;
+			glViewport(10, 10, 300, 300);
+			if (light->light_type == SPOT)
+				light->fbo->depth_texture->toViewport(shader);
+			else
+				light->fbo->depth_texture->toViewport();
+			shader->disable();
+			glViewport(0, 0, w, h);
+		}
+	}
+
+}
+
+void Renderer::changeRenderMode() {
+	if (current_mode == 0) {
+		render_mode = GTR::eRenderMode::TEXTURE;
+	}
+	else if (current_mode == 1) {
+		render_mode = GTR::eRenderMode::LIGHT_MULTI;
+	}
+	else if (current_mode == 2) {
+		render_mode = GTR::eRenderMode::LIGHT_SINGLE;
+	}
+
+}
 
 Texture* GTR::CubemapFromHDRE(const char* filename)
 {
