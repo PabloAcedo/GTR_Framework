@@ -96,7 +96,7 @@ void Application::render(void)
 	else
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-	//renderer->renderShadowMaps(scene);
+	renderer->renderShadowMaps(scene);
 
 	//set the camera as default (used by some functions in the framework)
 	camera->enable();
@@ -250,6 +250,7 @@ void Application::renderDebugGUI(void)
 	ImGui::Checkbox("Wireframe", &render_wireframe);
 	ImGui::ColorEdit3("BG color", scene->background_color.v);
 	ImGui::ColorEdit3("Ambient Light", scene->ambient_light.v);
+	ImGui::Checkbox("Shadows", &renderer->cast_shadows);
 
 	ImGui::Combo("Render Mode", &renderer->current_mode, renderer->optionsText, IM_ARRAYSIZE(renderer->optionsText));
 	renderer->changeRenderMode();

@@ -38,10 +38,13 @@ Renderer::Renderer() {
 	render_mode = GTR::eRenderMode::LIGHT_MULTI;
 	pipeline_mode = GTR::ePipelineMode::FORWARD;
 	showGbuffers = false;
+	cast_shadows = true;
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
 {
+	renderCalls.clear();
+	renderCalls_Blending.clear();
 	//render entities
 	for (int i = 0; i < scene->entities.size(); ++i)
 	{
@@ -64,18 +67,20 @@ void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
 
 void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 {
-	renderCalls.clear();
-	renderCalls_Blending.clear();
-
 	collectRenderCalls(scene, camera);
 
-	if (pipeline_mode == FORWARD) {
+	if (pipeline_mode == FORWARD || renderingShadows) {
 		//set the clear color (the background color)
 		glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
 		// Clear the color and the depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		checkGLErrors();
+
 		renderForward(scene, renderCalls, camera);
+		if (!renderingShadows) {
+			std::sort(renderCalls_Blending.begin(), renderCalls_Blending.end(), sortByDistance);
+			renderForward(scene, renderCalls_Blending, camera);
+		}
 	}
 	else if (pipeline_mode == DEFERRED)
 		renderDeferred(scene, renderCalls, camera);
@@ -264,7 +269,7 @@ void Renderer::multipassUniforms(GTR::LightEntity* light, Shader*& shader, const
 	texture = material->metallic_roughness_texture.texture;
 	uploadExtraMap(shader, texture, "u_omr", "u_has_ao", 3);
 
-	/*if (light->light_type != POINT) {
+	if (light->light_type != POINT && cast_shadows) {
 		//get the depth texture from the FBO
 		Texture* shadowmap = light->fbo->depth_texture;
 
@@ -276,7 +281,7 @@ void Renderer::multipassUniforms(GTR::LightEntity* light, Shader*& shader, const
 
 		//pass it to the shader
 		shader->setUniform("u_shadow_viewproj", shadow_proj);
-	}*/
+	}
 
 
 	//this is used to say which is the alpha threshold to what we should not paint a pixel on the screen (to cut polygons according to texture alpha)
@@ -351,6 +356,8 @@ void Renderer::singlepassUniforms(Shader*& shader, const Matrix44 model, GTR::Ma
 }
 
 void Renderer::renderShadowMaps(Scene* scene) {
+	if (!cast_shadows) return;
+
 	renderingShadows = true;
 	for (int i = 0; i < scene->lights.size(); i++) {
 		if (scene->lights[i]->light_type == POINT || !scene->lights[i]->visible)
@@ -442,12 +449,13 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	}
 
 	fbo_gbuffers.unbind();
-
 	if(showGbuffers)
 		showgbuffers(camera);
 }
 
 void GTR::Renderer::showgbuffers(Camera* camera) {
+	glDisable(GL_BLEND);
+
 	int width = Application::instance->window_width;
 	int height = Application::instance->window_height;
 
@@ -470,30 +478,6 @@ void GTR::Renderer::showgbuffers(Camera* camera) {
 
 	glViewport(0, 0, width, height);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

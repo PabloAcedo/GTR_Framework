@@ -13,7 +13,8 @@ namespace GTR {
 		TEXTURE,
 		LIGHT_MULTI,
 		LIGHT_SINGLE,
-		GBUFFERS
+		GBUFFERS,
+		SHADOWS
 	};
 
 	enum ePipelineMode {
@@ -57,6 +58,8 @@ namespace GTR {
 		const char* optionsTextPipeline[2] = {{"Forward"},{"Deferred"}};
 
 		bool renderingShadows;
+
+		bool cast_shadows;
 
 		bool showGbuffers;
 
