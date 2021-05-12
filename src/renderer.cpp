@@ -31,15 +31,17 @@ bool sortByDistance(RenderCall* i, RenderCall* j) {
 	return(i->distance2Cam > j->distance2Cam);
 }
 
-void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
+Renderer::Renderer() {
+	current_mode =  1;
+	current_mode_pipeline = 0;
+	renderingShadows = false;
+	render_mode = GTR::eRenderMode::LIGHT_MULTI;
+	pipeline_mode = GTR::ePipelineMode::FORWARD;
+	showGbuffers = false;
+}
+
+void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
 {
-	//set the clear color (the background color)
-	glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
-
-	// Clear the color and the depth buffer
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	checkGLErrors();
-
 	//render entities
 	for (int i = 0; i < scene->entities.size(); ++i)
 	{
@@ -51,24 +53,46 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 		if (ent->entity_type == PREFAB)
 		{
 			PrefabEntity* pent = (GTR::PrefabEntity*)ent;
-			if(pent->prefab)
+			if (pent->prefab)
 				renderPrefab(ent->model, pent->prefab, camera);
 		}
 	}
 
-	if (renderingShadows)
-		return;
-
 	//sort the rendercalls
 	std::sort(renderCalls.begin(), renderCalls.end(), sortByDistance);
-
-	//render
-	for (int i = 0; i < renderCalls.size(); i++) {
-		renderMeshWithMaterial(renderCalls[i]->model, renderCalls[i]->mesh, renderCalls[i]->material, camera);
-	}
-
-	renderCalls.clear();
 }
+
+void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
+{
+	renderCalls.clear();
+	renderCalls_Blending.clear();
+
+	collectRenderCalls(scene, camera);
+
+	if (pipeline_mode == FORWARD) {
+		//set the clear color (the background color)
+		glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
+		// Clear the color and the depth buffer
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		checkGLErrors();
+		renderForward(scene, renderCalls, camera);
+	}
+	else if (pipeline_mode == DEFERRED)
+		renderDeferred(scene, renderCalls, camera);
+
+	/*if (!renderingShadows) {
+		std::sort(renderCalls_Blending.begin(), renderCalls_Blending.end(), sortByDistance);
+		renderForward(scene, renderCalls_Blending, camera);
+	}*/
+}
+
+void Renderer::renderForward(Scene* scene, std::vector<RenderCall*>& rc, Camera* camera) {
+	//render
+	for (int i = 0; i < rc.size(); i++) {
+		renderMeshWithMaterial(render_mode,rc[i]->model, rc[i]->mesh, rc[i]->material, camera);
+	}
+}
+
 
 //renders all the prefab
 void Renderer::renderPrefab(const Matrix44& model, GTR::Prefab* prefab, Camera* camera)
@@ -96,15 +120,13 @@ void Renderer::renderNode(const Matrix44& prefab_model, GTR::Node* node, Camera*
 		//if bounding box is inside the camera frustum then the object is probably visible
 		if (camera->testBoxInFrustum(world_bounding.center, world_bounding.halfsize) )
 		{
+			RenderCall* rc = new RenderCall(node_model, node->mesh, node->material);
+			rc->distance2Cam = world_bounding.center.distance(camera->eye);
 			if (node->material->alpha_mode == BLEND && !renderingShadows) {
-				RenderCall* rc = new RenderCall(node_model, node->mesh, node->material);
-				rc->distance2Cam = world_bounding.center.distance(camera->eye);
-				renderCalls.push_back(rc);
+				renderCalls_Blending.push_back(rc);
 			}
 			else {
-				//render node mesh
-				renderMeshWithMaterial(node_model, node->mesh, node->material, camera);
-				//node->mesh->renderBounding(node_model, true);
+				renderCalls.push_back(rc);
 			}
 		}
 	}
@@ -115,7 +137,7 @@ void Renderer::renderNode(const Matrix44& prefab_model, GTR::Node* node, Camera*
 }
 
 //renders a mesh given its transform and material
-void Renderer::renderMeshWithMaterial(const Matrix44 model, Mesh* mesh, GTR::Material* material, Camera* camera)
+void Renderer::renderMeshWithMaterial(eRenderMode mode, const Matrix44 model, Mesh* mesh, GTR::Material* material, Camera* camera)
 {
 	//in case there is nothing to do
 	if (!mesh || !mesh->getNumVertices() || !material )
@@ -140,9 +162,8 @@ void Renderer::renderMeshWithMaterial(const Matrix44 model, Mesh* mesh, GTR::Mat
 	else
 		glEnable(GL_CULL_FACE);
     assert(glGetError() == GL_NO_ERROR);
-
 	if (!renderingShadows) {
-		if (render_mode == GTR::eRenderMode::TEXTURE) {
+		if (mode == GTR::eRenderMode::TEXTURE) {
 			shader = Shader::Get("texture");
 			if (shader == NULL)
 				return;
@@ -151,7 +172,7 @@ void Renderer::renderMeshWithMaterial(const Matrix44 model, Mesh* mesh, GTR::Mat
 			//disable shader
 			shader->disable();
 		}
-		else if (render_mode == GTR::eRenderMode::LIGHT_MULTI) {
+		else if (mode == GTR::eRenderMode::LIGHT_MULTI) {
 			shader = Shader::Get("multi_pass");
 			if (shader == NULL)
 				return;
@@ -160,12 +181,19 @@ void Renderer::renderMeshWithMaterial(const Matrix44 model, Mesh* mesh, GTR::Mat
 			//disable shader
 			shader->disable();
 		}
-		else if (render_mode == GTR::eRenderMode::LIGHT_SINGLE) {
+		else if (mode == GTR::eRenderMode::LIGHT_SINGLE) {
 			shader = Shader::Get("single_pass");
 			if (shader == NULL)
 				return;
 			shader->enable();
 			singlepassUniforms(shader, model, material, camera, mesh);
+			shader->disable();
+		}else if (mode == GTR::eRenderMode::GBUFFERS) {
+			shader = Shader::Get("g_buffers");
+			if (shader == NULL)
+				return;
+			shader->enable();
+			commonUniforms(shader, model, material, camera, mesh, false);
 			shader->disable();
 		}
 	}
@@ -218,7 +246,6 @@ void Renderer::uploadExtraMap(Shader*& shader, Texture* texture, const char* uni
 	}
 }
 
-
 void Renderer::multipassUniforms(GTR::LightEntity* light, Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh, int iteration) {
 
 	light->lightVisible();
@@ -237,7 +264,7 @@ void Renderer::multipassUniforms(GTR::LightEntity* light, Shader*& shader, const
 	texture = material->metallic_roughness_texture.texture;
 	uploadExtraMap(shader, texture, "u_omr", "u_has_ao", 3);
 
-	if (light->light_type != POINT) {
+	/*if (light->light_type != POINT) {
 		//get the depth texture from the FBO
 		Texture* shadowmap = light->fbo->depth_texture;
 
@@ -249,7 +276,7 @@ void Renderer::multipassUniforms(GTR::LightEntity* light, Shader*& shader, const
 
 		//pass it to the shader
 		shader->setUniform("u_shadow_viewproj", shadow_proj);
-	}
+	}*/
 
 
 	//this is used to say which is the alpha threshold to what we should not paint a pixel on the screen (to cut polygons according to texture alpha)
@@ -381,6 +408,96 @@ void Renderer::changeRenderMode() {
 	}
 
 }
+
+void Renderer::changePipelineMode() {
+	if (current_mode_pipeline == 0) {
+		pipeline_mode = GTR::ePipelineMode::FORWARD;
+	}
+	else if (current_mode_pipeline == 1) {
+		pipeline_mode = GTR::ePipelineMode::DEFERRED;
+	}
+
+}
+
+/****************************************************************************************/
+//deferred
+void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera* camera) {
+
+	glDisable(GL_BLEND);
+
+	if (fbo_gbuffers.fbo_id == 0) {
+		fbo_gbuffers.create(Application::instance->window_width,
+			Application::instance->window_height,
+			3, GL_RGBA, GL_UNSIGNED_BYTE);
+	}
+
+	fbo_gbuffers.bind();
+
+	glClearColor(0, 0, 0, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	checkGLErrors();
+
+	for (int i = 0; i < rc.size(); i++) {
+		renderMeshWithMaterial(GTR::eRenderMode::GBUFFERS,rc[i]->model, rc[i]->mesh, rc[i]->material, camera);
+	}
+
+	fbo_gbuffers.unbind();
+
+	if(showGbuffers)
+		showgbuffers(camera);
+}
+
+void GTR::Renderer::showgbuffers(Camera* camera) {
+	int width = Application::instance->window_width;
+	int height = Application::instance->window_height;
+
+	glViewport(0, height*0.5, width * 0.5, height * 0.5);
+	fbo_gbuffers.color_textures[0]->toViewport();
+
+	glViewport(width * 0.5, height*0.5, width * 0.5, height * 0.5);
+	fbo_gbuffers.color_textures[1]->toViewport();
+
+	glViewport(0, 0, width * 0.5, height * 0.5);
+	fbo_gbuffers.color_textures[2]->toViewport();
+
+	glViewport(width * 0.5, 0, width * 0.5, height * 0.5);
+	Shader* shader = Shader::Get("depth");
+	shader->enable();
+	shader->setUniform("u_camera_nearfar", Vector2(camera->near_plane, camera->far_plane));
+	fbo_gbuffers.depth_texture->toViewport(shader);
+	shader->disable();
+
+
+	glViewport(0, 0, width, height);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 Texture* GTR::CubemapFromHDRE(const char* filename)
 {

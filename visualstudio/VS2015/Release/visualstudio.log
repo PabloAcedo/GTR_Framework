@@ -1,19 +1,42 @@
 ﻿  application.cpp
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\scene.h(11,12): warning C4099: 'cJSON': type name first seen using 'struct' now seen using 'class'
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cJSON.h(103): message : see declaration of 'cJSON'
+  renderer.cpp
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\scene.h(11,12): warning C4099: 'cJSON': type name first seen using 'struct' now seen using 'class' (compiling source file ..\..\src\application.cpp)
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cJSON.h(103): message : see declaration of 'cJSON' (compiling source file ..\..\src\application.cpp)
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cJSON.h(104,1): warning C4099: 'cJSON': type name first seen using 'class' now seen using 'struct' (compiling source file ..\..\src\renderer.cpp)
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cJSON.h(103): message : see declaration of 'cJSON' (compiling source file ..\..\src\renderer.cpp)
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(118,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(119,20): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(135,55): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(137,55): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(261,20): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(354,36): warning C4244: '*=': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(356,35): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(266,20): warning C4018: '<': signed/unsigned mismatch
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(359,36): warning C4244: '*=': conversion from 'double' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(361,35): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(46,20): warning C4018: '<': signed/unsigned mismatch
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(91,20): warning C4018: '<': signed/unsigned mismatch
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(135,20): warning C4018: '<': signed/unsigned mismatch
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(225,10): warning C4244: 'initializing': conversion from 'long' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(301,20): warning C4018: '<': signed/unsigned mismatch
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(355,20): warning C4018: '<': signed/unsigned mismatch
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(379,20): warning C4018: '<': signed/unsigned mismatch
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(440,20): warning C4018: '<': signed/unsigned mismatch
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(454,48): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(454,34): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(454,22): warning C4244: 'argument': conversion from 'double' to 'GLint', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(457,58): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(457,44): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(457,32): warning C4244: 'argument': conversion from 'double' to 'GLint', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(457,19): warning C4244: 'argument': conversion from 'double' to 'GLint', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(460,39): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(460,25): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(463,49): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(463,35): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(463,19): warning C4244: 'argument': conversion from 'double' to 'GLint', possible loss of data
      Creating library ..\..\framework.lib and object ..\..\framework.exp
 LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
   Generating code
-  131 of 4203 functions ( 3.1%) were compiled, the rest were copied from previous compilation.
+  35 of 4247 functions ( 0.8%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    94 functions had inline decision re-evaluated but remain unchanged
+    61 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
 LINK : warning LNK4286: symbol '___glewDeleteBuffers' defined in 'glew32s.lib(glew.obj)' is imported by 'imgui_impl_opengl3.obj'
 LINK : warning LNK4286: symbol '___glewLinkProgram' defined in 'glew32s.lib(glew.obj)' is imported by 'imgui_impl_opengl3.obj'

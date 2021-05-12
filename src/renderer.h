@@ -1,16 +1,24 @@
 #pragma once
 #include "prefab.h"
+#include "fbo.h"
 
 //forward declarations
 class Camera;
 class Shader;
+
 
 namespace GTR {
 
 	enum eRenderMode {
 		TEXTURE,
 		LIGHT_MULTI,
-		LIGHT_SINGLE
+		LIGHT_SINGLE,
+		GBUFFERS
+	};
+
+	enum ePipelineMode {
+		FORWARD,
+		DEFERRED
 	};
 
 	class Prefab;
@@ -34,15 +42,28 @@ namespace GTR {
 	public:
 
 		eRenderMode render_mode;
+		ePipelineMode pipeline_mode;
 
 		std::vector<RenderCall*> renderCalls;
+		std::vector<RenderCall*> renderCalls_Blending;
+
+		FBO fbo_gbuffers;
 
 		int current_mode;
+		int current_mode_pipeline;
 
 		const char* optionsText[3] = { {"Texture"},{"Multipass"},{"SinglePass"} };
 
+		const char* optionsTextPipeline[2] = {{"Forward"},{"Deferred"}};
+
 		bool renderingShadows;
-		//add here your functions
+
+		bool showGbuffers;
+
+		Renderer();
+
+		/**********************************************************************************************/
+		//forward
 		void commonUniforms(Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh, bool fromOther); //texture
 
 		void multipassUniforms(LightEntity* light, Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh, int iteration); //multipass
@@ -67,9 +88,26 @@ namespace GTR {
 		void renderNode(const Matrix44& model, GTR::Node* node, Camera* camera);
 
 		//to render one mesh given its material and transformation matrix
-		void renderMeshWithMaterial(const Matrix44 model, Mesh* mesh, GTR::Material* material, Camera* camera);
+		void renderMeshWithMaterial(eRenderMode mode, const Matrix44 model, Mesh* mesh, GTR::Material* material, Camera* camera);
 
 		void changeRenderMode();
+
+		void changePipelineMode();
+
+		void renderForward(Scene* scene, std::vector<RenderCall*>& rc, Camera* camera);
+
+		/**********************************************************************************************/
+		//deferred
+		void collectRenderCalls(GTR::Scene* scene, Camera* camera);
+
+		//void collectPrefabRC(const Matrix44& model, GTR::Prefab* prefab, Camera* camera);
+
+		//void collectNodeRC(const Matrix44& model, GTR::Node* node, Camera* camera);
+
+		void renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera* camera);
+
+		void showgbuffers(Camera* camera);
+
 	};
 
 	Texture* CubemapFromHDRE(const char* filename);

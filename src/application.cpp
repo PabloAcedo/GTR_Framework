@@ -96,7 +96,7 @@ void Application::render(void)
 	else
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-	renderer->renderShadowMaps(scene);
+	//renderer->renderShadowMaps(scene);
 
 	//set the camera as default (used by some functions in the framework)
 	camera->enable();
@@ -241,6 +241,11 @@ void Application::renderDebugGUI(void)
 
 	//System stats
 	ImGui::Text(getGPUStats().c_str());					   // Display some text (you can use a format strings too)
+
+	ImGui::Combo("Pipeline Mode", &renderer->current_mode_pipeline, renderer->optionsTextPipeline, IM_ARRAYSIZE(renderer->optionsTextPipeline));
+	renderer->changePipelineMode();
+	if(renderer->current_mode_pipeline == GTR::ePipelineMode::DEFERRED)
+		ImGui::Checkbox("Show gbuffers", &renderer->showGbuffers);
 
 	ImGui::Checkbox("Wireframe", &render_wireframe);
 	ImGui::ColorEdit3("BG color", scene->background_color.v);
