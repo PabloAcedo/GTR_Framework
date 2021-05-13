@@ -548,10 +548,11 @@ uniform float u_time;
 uniform float u_alpha_cutoff;
 
 uniform sampler2D u_texture;
+uniform sampler2D u_omr;
 
 layout(location = 0) out vec4 FragColor;
 layout(location = 1) out vec4 NormalColor;
-layout(location = 2) out vec4 ExtraColor;
+layout(location = 2) out vec4 OMR; //occlussion_metalness_roughness
 
 
 void main()
@@ -567,5 +568,6 @@ void main()
 
 	FragColor = color;
 	NormalColor = vec4(N*0.5 + vec3(0.5),1.0);
-	ExtraColor = vec4(0.0);
+	OMR = texture( u_omr, v_uv );
+
 }

@@ -198,6 +198,8 @@ void Renderer::renderMeshWithMaterial(eRenderMode mode, const Matrix44 model, Me
 			if (shader == NULL)
 				return;
 			shader->enable();
+			Texture* texture = material->metallic_roughness_texture.texture;
+			uploadExtraMap(shader, texture, "u_omr", "u_has_omr", 1);
 			commonUniforms(shader, model, material, camera, mesh, false);
 			shader->disable();
 		}
@@ -243,12 +245,13 @@ void Renderer::commonUniforms(Shader*& shader, const Matrix44 model, GTR::Materi
 
 void Renderer::uploadExtraMap(Shader*& shader, Texture* texture, const char* uniform_name, const char* bool_name, int tex_slot) {
 	if (texture) {
-		shader->setUniform(uniform_name, texture, tex_slot);
 		shader->setUniform(bool_name, true);
 	}
 	else {
+		texture = Texture::getWhiteTexture(); //a 1x1 white texture
 		shader->setUniform(bool_name, false);
 	}
+	shader->setUniform(uniform_name, texture, tex_slot);
 }
 
 void Renderer::multipassUniforms(GTR::LightEntity* light, Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh, int iteration) {
@@ -474,7 +477,6 @@ void GTR::Renderer::showgbuffers(Camera* camera) {
 	shader->setUniform("u_camera_nearfar", Vector2(camera->near_plane, camera->far_plane));
 	fbo_gbuffers.depth_texture->toViewport(shader);
 	shader->disable();
-
 
 	glViewport(0, 0, width, height);
 }
