@@ -566,10 +566,19 @@ uniform float u_alpha_cutoff;
 
 uniform sampler2D u_texture;
 uniform sampler2D u_omr;
+uniform sampler2D u_normal_map;
+uniform sampler2D u_emissive;
+
+uniform bool u_has_normal;
+
+uniform vec3 u_camera_position;
+
+#include "realistic_normals"
 
 layout(location = 0) out vec4 FragColor;
 layout(location = 1) out vec4 NormalColor;
 layout(location = 2) out vec4 OMR; //occlussion_metalness_roughness
+layout(location = 3) out vec4 EmissiveColor; //emissive
 
 
 void main()
@@ -580,12 +589,19 @@ void main()
 
 	vec3 N = normalize(v_normal);
 
+	if(u_has_normal){
+		vec3 V = normalize(u_camera_position - v_world_position);
+		vec3 np = texture( u_normal_map, v_uv ).xyz;
+		N = perturbNormal(N, V, v_uv, np);
+	}
+
 	if(color.a < u_alpha_cutoff)
 		discard;
 
 	FragColor = color;
 	NormalColor = vec4(N*0.5 + vec3(0.5),1.0);
 	OMR = texture( u_omr, v_uv );
+	EmissiveColor = texture( u_emissive, v_uv );
 
 }
 
@@ -602,6 +618,7 @@ uniform sampler2D u_albedo;
 uniform sampler2D u_normal_texture;
 uniform sampler2D u_omr;
 uniform sampler2D u_depth_texture;
+uniform sampler2D u_emissive_color;
 
 uniform mat4 u_inverse_viewprojection;
 uniform vec2 u_iRes;
@@ -617,6 +634,8 @@ void main()
 	
 	vec4 omr = texture( u_omr, uv );
 
+	vec4 emissive = texture( u_emissive_color, uv );
+
 	float depth = texture( u_depth_texture, uv ).x;
 	vec4 screen_pos = vec4(uv.x*2.0-1.0, uv.y*2.0-1.0, depth*2.0-1.0, 1.0);
 	vec4 proj_worldpos = u_inverse_viewprojection * screen_pos;
@@ -629,6 +648,7 @@ void main()
 
 	if(u_iteration == 0){
 		total_light += u_light_ambient;
+		total_light *= omr.x;
 	}
 
 	total_light += computePhong(N,world_pos);
@@ -638,6 +658,11 @@ void main()
 	}
 
 	color.xyz *= total_light;
+
+	if(u_iteration == 0){
+		color.xyz += emissive.xyz;
+	}
+	
 
 	FragColor = color;
 }

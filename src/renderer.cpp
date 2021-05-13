@@ -198,6 +198,11 @@ void Renderer::renderMeshWithMaterial(eRenderMode mode, const Matrix44 model, Me
 			shader->enable();
 			Texture* texture = material->metallic_roughness_texture.texture;
 			uploadExtraMap(shader, texture, "u_omr", "u_has_omr", 1);
+			texture = material->emissive_texture.texture;
+			uploadExtraMap(shader, texture, "u_emissive", "u_has_emissive", 2);
+			texture = material->normal_texture.texture;
+			uploadExtraMap(shader, texture, "u_normal_map", "u_has_normal", 3);
+			shader->setUniform("u_camera_position", camera->eye);
 			commonUniforms(shader, model, material, camera, mesh, false);
 			shader->disable();
 		}
@@ -246,7 +251,10 @@ void Renderer::uploadExtraMap(Shader*& shader, Texture* texture, const char* uni
 		shader->setUniform(bool_name, true);
 	}
 	else {
-		texture = Texture::getWhiteTexture(); //a 1x1 white texture
+		texture = Texture::getWhiteTexture();
+		if (uniform_name == "u_emissive")
+			texture = Texture::getBlackTexture();
+
 		shader->setUniform(bool_name, false);
 	}
 	shader->setUniform(uniform_name, texture, tex_slot);
@@ -421,7 +429,7 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	if (fbo_gbuffers.fbo_id == 0) {
 		fbo_gbuffers.create(Application::instance->window_width,
 			Application::instance->window_height,
-			3, GL_RGBA, GL_UNSIGNED_BYTE);
+			4, GL_RGBA, GL_UNSIGNED_BYTE);
 	}
 
 	//render gbuffers
@@ -491,6 +499,7 @@ void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera
 	shader->setUniform("u_normal_texture", fbo_gbuffers.color_textures[1], 1);
 	shader->setUniform("u_omr", fbo_gbuffers.color_textures[2], 2);
 	shader->setUniform("u_depth_texture", fbo_gbuffers.depth_texture, 3);
+	shader->setUniform("u_emissive_color", fbo_gbuffers.color_textures[3], 4);
 
 	Matrix44 vp_inv = camera->viewprojection_matrix;
 	vp_inv.inverse();
