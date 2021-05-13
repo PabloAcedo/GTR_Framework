@@ -82,13 +82,10 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 			renderForward(scene, renderCalls_Blending, camera);
 		}
 	}
-	else if (pipeline_mode == DEFERRED)
+	else if (pipeline_mode == DEFERRED) {
 		renderDeferred(scene, renderCalls, camera);
-
-	/*if (!renderingShadows) {
-		std::sort(renderCalls_Blending.begin(), renderCalls_Blending.end(), sortByDistance);
-		renderForward(scene, renderCalls_Blending, camera);
-	}*/
+	}
+		
 }
 
 void Renderer::renderForward(Scene* scene, std::vector<RenderCall*>& rc, Camera* camera) {
@@ -96,6 +93,7 @@ void Renderer::renderForward(Scene* scene, std::vector<RenderCall*>& rc, Camera*
 	for (int i = 0; i < rc.size(); i++) {
 		renderMeshWithMaterial(render_mode,rc[i]->model, rc[i]->mesh, rc[i]->material, camera);
 	}
+	glDisable(GL_BLEND);
 }
 
 
@@ -270,23 +268,9 @@ void Renderer::multipassUniforms(GTR::LightEntity* light, Shader*& shader, const
 	uploadExtraMap(shader, texture, "u_normal_map", "u_has_normal", 2);
 
 	texture = material->metallic_roughness_texture.texture;
-	uploadExtraMap(shader, texture, "u_omr", "u_has_ao", 3);
+	uploadExtraMap(shader, texture, "u_omr", "u_has_omr", 3);
 
-	if (light->light_type != POINT && cast_shadows) {
-		//get the depth texture from the FBO
-		Texture* shadowmap = light->fbo->depth_texture;
-
-		//pass it to the shader in slot 8
-		shader->setTexture("u_shadowmap", shadowmap, 8);
-
-		//also get the viewprojection from the light
-		Matrix44 shadow_proj = light->cam->viewprojection_matrix;
-
-		//pass it to the shader
-		shader->setUniform("u_shadow_viewproj", shadow_proj);
-	}
-
-
+	
 	//this is used to say which is the alpha threshold to what we should not paint a pixel on the screen (to cut polygons according to texture alpha)
 	shader->setUniform("u_alpha_cutoff", material->alpha_mode == GTR::eAlphaMode::MASK ? material->alpha_cutoff : 0);
 
@@ -416,7 +400,6 @@ void Renderer::changeRenderMode() {
 	else if (current_mode == 2) {
 		render_mode = GTR::eRenderMode::LIGHT_SINGLE;
 	}
-
 }
 
 void Renderer::changePipelineMode() {
@@ -441,6 +424,7 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 			3, GL_RGBA, GL_UNSIGNED_BYTE);
 	}
 
+	//render gbuffers
 	fbo_gbuffers.bind();
 
 	glClearColor(0, 0, 0, 0);
@@ -452,13 +436,25 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	}
 
 	fbo_gbuffers.unbind();
+
+	glClearColor(0, 0, 0, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	checkGLErrors();
+
+	glDisable(GL_BLEND);
+	glDisable(GL_DEPTH_TEST);
+
+	multipassDeferred(camera);
+
+	glDisable(GL_BLEND);
+	glDisable(GL_DEPTH_TEST);
+
 	if(showGbuffers)
 		showgbuffers(camera);
 }
 
 void GTR::Renderer::showgbuffers(Camera* camera) {
-	glDisable(GL_BLEND);
-
+	
 	int width = Application::instance->window_width;
 	int height = Application::instance->window_height;
 
@@ -481,8 +477,50 @@ void GTR::Renderer::showgbuffers(Camera* camera) {
 	glViewport(0, 0, width, height);
 }
 
+void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera, int iteration) {
 
+	Shader* shader = Shader::Get("deferred_multi_pass");
+	if (shader == NULL) return;
 
+	Mesh* quad = Mesh::getQuad();
+	light->lightVisible();
+
+	shader->enable();
+	//pass the gbuffers to the shader
+	shader->setUniform("u_albedo", fbo_gbuffers.color_textures[0], 0);
+	shader->setUniform("u_normal_texture", fbo_gbuffers.color_textures[1], 1);
+	shader->setUniform("u_omr", fbo_gbuffers.color_textures[2], 2);
+	shader->setUniform("u_depth_texture", fbo_gbuffers.depth_texture, 3);
+
+	Matrix44 vp_inv = camera->viewprojection_matrix;
+	vp_inv.inverse();
+	//pass the inverse projection of the camera to reconstruct world pos.
+	shader->setUniform("u_inverse_viewprojection", vp_inv);
+
+	//pass the inverse window resolution, this may be useful
+	int width = Application::instance->window_width;
+	int height = Application::instance->window_height;
+	shader->setUniform("u_iRes", Vector2(1.0 / (float)width, 1.0 / (float)height));
+
+	light->uploadUniforms(shader);
+	shader->setUniform("u_iteration", iteration);
+	if (Scene::instance != NULL)
+		shader->setUniform("u_light_ambient", Scene::instance->ambient_light);
+
+	//render a fullscreen quad
+	quad->render(GL_TRIANGLES);
+
+	shader->disable();
+}
+
+void GTR::Renderer::multipassDeferred(Camera* camera){
+	for (int i = 0; i < Scene::instance->lights.size(); i++) {
+		LightEntity* light = Scene::instance->lights[i];
+		multipassUniformsDeferred(light, camera, i);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+	}
+}
 
 
 Texture* GTR::CubemapFromHDRE(const char* filename)

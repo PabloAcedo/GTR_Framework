@@ -103,13 +103,13 @@ namespace GTR {
 		//deferred
 		void collectRenderCalls(GTR::Scene* scene, Camera* camera);
 
-		//void collectPrefabRC(const Matrix44& model, GTR::Prefab* prefab, Camera* camera);
-
-		//void collectNodeRC(const Matrix44& model, GTR::Node* node, Camera* camera);
-
 		void renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera* camera);
 
 		void showgbuffers(Camera* camera);
+
+		void multipassUniformsDeferred(LightEntity* light, Camera* camera, int iteration);
+
+		void multipassDeferred(Camera* camera);
 
 	};
 

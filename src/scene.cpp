@@ -305,7 +305,23 @@ void GTR::LightEntity::uploadUniforms(Shader*& shader) {
 	shader->setUniform("u_cosCutoff", (float)cos(cone_angle * DEG2RAD));
 	shader->setUniform("u_light_intensity", intensity);
 	shader->setUniform("u_spot_exp", spotExp);
-	shader->setUniform("u_shadow_bias", this->bias);
+
+	if (light_type != POINT) {
+		shader->setUniform("u_shadow_bias", this->bias);
+
+		//get the depth texture from the FBO
+		Texture* shadowmap = fbo->depth_texture;
+
+		//pass it to the shader in slot 8
+		shader->setTexture("u_shadowmap", shadowmap, 8);
+
+		//also get the viewprojection from the light
+		Matrix44 shadow_proj = cam->viewprojection_matrix;
+
+		//pass it to the shader
+		shader->setUniform("u_shadow_viewproj", shadow_proj);
+	}
+	
 }
 
 void GTR::LightEntity::lightVisible() {

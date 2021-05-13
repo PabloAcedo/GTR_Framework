@@ -6,6 +6,7 @@ multi basic.vs multi.fs
 multi_pass basic.vs multi_pass.fs
 single_pass basic.vs single_pass.fs 
 g_buffers basic.vs g_buffers.fs
+deferred_multi_pass quad.vs deferred_multi_pass.fs
 
 \basic.vs
 
@@ -49,28 +50,7 @@ void main()
 	gl_Position = u_viewprojection * vec4( v_world_position, 1.0 );
 }
 
-\multi_pass.fs
-
-#version 330 core
-
-in vec3 v_position;
-in vec3 v_world_position;
-in vec3 v_normal;
-in vec2 v_uv;
-in vec4 v_color;
-
-uniform vec4 u_color;
-
-uniform sampler2D u_texture;
-uniform sampler2D u_normal_map;
-uniform sampler2D u_emissive;
-uniform sampler2D u_omr;
-
-uniform float u_time;
-uniform float u_alpha_cutoff;
-
-uniform mat4 u_model;
-uniform vec3 u_camera_position;
+\light_uniforms
 
 uniform vec3 u_light_pos;
 uniform vec3 u_light_ambient;
@@ -81,111 +61,22 @@ uniform float u_light_maxdist;
 uniform float u_cosCutoff;
 uniform float u_light_intensity;
 uniform float u_spot_exp;
-//uniform float u_emissive_factor;
 uniform int u_iteration;
 
-uniform bool u_has_emissive;
-uniform bool u_has_normal;
-uniform bool u_has_ao;
+vec3 computePhong(vec3 N, vec3 world_position){
 
-//shadows
-uniform sampler2D u_shadowmap;
-uniform mat4 u_shadow_viewproj;
-uniform float u_shadow_bias;
-
-uniform bool u_has_shadows;
-
-float computeShadow(){
-	vec4 proj_pos = u_shadow_viewproj * vec4(v_world_position,1.0);
-
-	vec2 shadow_uv = proj_pos.xy / proj_pos.w;
-
-	shadow_uv = shadow_uv * 0.5 + vec2(0.5);
-
-	float real_depth = (proj_pos.z - u_shadow_bias) / proj_pos.w;
-
-	real_depth = real_depth * 0.5 + 0.5;
-
-	float shadow_depth = texture( u_shadowmap, shadow_uv).x;
-	float shadow_factor = 1.0;
-
-	if( shadow_uv.x < 0.0 || shadow_uv.x > 1.0 ||shadow_uv.y < 0.0 || shadow_uv.y > 1.0 )
-			return 1.0;
-
-	//it is before near or behind far plane
-	if(real_depth < 0.0 || real_depth > 1.0)
-		return 1.0;
-
-	if( shadow_depth < real_depth )
-		shadow_factor = 0.0;
-	
-	return shadow_factor;
-}
-
-mat3 cotangent_frame(vec3 N, vec3 p, vec2 uv)
-{
-	// get edge vectors of the pixel triangle
-	vec3 dp1 = dFdx( p );
-	vec3 dp2 = dFdy( p );
-	vec2 duv1 = dFdx( uv );
-	vec2 duv2 = dFdy( uv );
-	
-	// solve the linear system
-	vec3 dp2perp = cross( dp2, N );
-	vec3 dp1perp = cross( N, dp1 );
-	vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
-	vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
- 
-	// construct a scale-invariant frame 
-	float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
-	return mat3( T * invmax, B * invmax, N );
-}
-
-// assume N, the interpolated vertex normal and 
-// WP the world position
-//vec3 normal_pixel = texture2D( normalmap, uv ).xyz; 
-vec3 perturbNormal(vec3 N, vec3 WP, vec2 uv, vec3 normal_pixel)
-{
-	normal_pixel = normal_pixel * 255./127. - 128./127.;
-	mat3 TBN = cotangent_frame(N, WP, uv);
-	return normalize(TBN * normal_pixel);
-}
-
-out vec4 FragColor;
-
-void main()
-{
-	vec3 light_color = u_light_color;
-	float att_factor = 1.0;
-	vec4 color = u_color;
-	color *= texture( u_texture, v_uv );
-
-	vec3 light = vec3(0.0);
-	if(u_iteration == 0){
-		light += u_light_ambient;
-		if(u_has_ao){
-			light *= vec3(texture( u_omr, v_uv ).x);
-		}
-	}
-	
-	//light equation vectors
-	vec3 N = normalize(v_normal);
-	vec3 V = normalize(u_camera_position - v_world_position); 
-	
-	if(u_has_normal){
-		vec3 np = texture( u_normal_map, v_uv ).xyz;
-		N = perturbNormal(N, V, v_uv, np);
-	}
-	
 	vec3 L; 
-
+	vec3 light = vec3(0.0);
 	float spotFactor = 1.0;
+	float att_factor = 1.0;
+	vec3 light_color = u_light_color;
+
 	if(u_light_type == 2){ //directional
 		L = normalize(-u_light_direction);
 	}else{
-		L = normalize(u_light_pos - v_world_position);
+		L = normalize(u_light_pos - world_position);
 		//compute distance
-		float light_distance = length(u_light_pos - v_world_position);
+		float light_distance = length(u_light_pos - world_position);
 
 		//compute a linear attenuation factor
 		att_factor = u_light_maxdist - light_distance;
@@ -215,11 +106,139 @@ void main()
 	
 	light += NdotL*light_color*u_light_intensity*att_factor*spotFactor;
 
-	if(u_light_type == 1 || u_light_type == 2 && light_color != vec3(0.0)){
-		light *= computeShadow();
+	return light;
+}
+
+\shadows
+//shadows
+uniform sampler2D u_shadowmap;
+uniform mat4 u_shadow_viewproj;
+uniform float u_shadow_bias;
+
+float computeShadow(vec3 world_position){
+	vec4 proj_pos = u_shadow_viewproj * vec4(world_position,1.0);
+
+	vec2 shadow_uv = proj_pos.xy / proj_pos.w;
+
+	shadow_uv = shadow_uv * 0.5 + vec2(0.5);
+
+	float real_depth = (proj_pos.z - u_shadow_bias) / proj_pos.w;
+
+	real_depth = real_depth * 0.5 + 0.5;
+
+	float shadow_depth = texture( u_shadowmap, shadow_uv).x;
+	float shadow_factor = 1.0;
+
+	if( shadow_uv.x < 0.0 || shadow_uv.x > 1.0 ||shadow_uv.y < 0.0 || shadow_uv.y > 1.0 )
+			return 1.0;
+
+	//it is before near or behind far plane
+	if(real_depth < 0.0 || real_depth > 1.0)
+		return 1.0;
+
+	if( shadow_depth < real_depth )
+		shadow_factor = 0.0;
+	
+	return shadow_factor;
+}
+
+\realistic_normals
+mat3 cotangent_frame(vec3 N, vec3 p, vec2 uv)
+{
+	// get edge vectors of the pixel triangle
+	vec3 dp1 = dFdx( p );
+	vec3 dp2 = dFdy( p );
+	vec2 duv1 = dFdx( uv );
+	vec2 duv2 = dFdy( uv );
+	
+	// solve the linear system
+	vec3 dp2perp = cross( dp2, N );
+	vec3 dp1perp = cross( N, dp1 );
+	vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+	vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+ 
+	// construct a scale-invariant frame 
+	float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
+	return mat3( T * invmax, B * invmax, N );
+}
+
+// assume N, the interpolated vertex normal and 
+// WP the world position
+//vec3 normal_pixel = texture2D( normalmap, uv ).xyz; 
+vec3 perturbNormal(vec3 N, vec3 WP, vec2 uv, vec3 normal_pixel)
+{
+	normal_pixel = normal_pixel * 255./127. - 128./127.;
+	mat3 TBN = cotangent_frame(N, WP, uv);
+	return normalize(TBN * normal_pixel);
+}
+
+\multi_pass.fs
+
+#version 330 core
+
+in vec3 v_position;
+in vec3 v_world_position;
+in vec3 v_normal;
+in vec2 v_uv;
+in vec4 v_color;
+
+uniform vec4 u_color;
+
+uniform sampler2D u_texture;
+uniform sampler2D u_normal_map;
+uniform sampler2D u_emissive;
+uniform sampler2D u_omr;
+
+uniform float u_time;
+uniform float u_alpha_cutoff;
+
+uniform mat4 u_model;
+uniform vec3 u_camera_position;
+
+#include "light_uniforms"
+
+#include "shadows"
+
+#include "realistic_normals"
+
+//uniform float u_emissive_factor;
+uniform bool u_has_emissive;
+uniform bool u_has_normal;
+uniform bool u_has_omr;
+
+uniform bool u_has_shadows;
+
+out vec4 FragColor;
+
+void main()
+{
+	vec4 color = u_color;
+	color *= texture( u_texture, v_uv );
+
+	vec3 total_light = vec3(0.0);
+	if(u_iteration == 0){
+		total_light += u_light_ambient;
+		if(u_has_omr){
+			total_light *= vec3(texture( u_omr, v_uv ).x);
+		}
 	}
 	
-	color.xyz *= light; 
+	//light equation vectors
+	vec3 N = normalize(v_normal);
+	vec3 V = normalize(u_camera_position - v_world_position); 
+	
+	if(u_has_normal){
+		vec3 np = texture( u_normal_map, v_uv ).xyz;
+		N = perturbNormal(N, V, v_uv, np);
+	}
+
+	total_light += computePhong(N,v_world_position);
+
+	if(u_light_type == 1 || u_light_type == 2 && total_light != vec3(0.0)){
+		total_light *= computeShadow(v_world_position);
+	}
+	
+	color.xyz *= total_light; 
 
 	if(u_has_emissive && u_iteration == 0){
 		color.xyz += texture( u_emissive, v_uv ).xyz;//*u_emissive_factor;
@@ -543,8 +562,6 @@ in vec2 v_uv;
 in vec4 v_color;
 
 uniform vec4 u_color;
-
-uniform float u_time;
 uniform float u_alpha_cutoff;
 
 uniform sampler2D u_texture;
@@ -570,4 +587,57 @@ void main()
 	NormalColor = vec4(N*0.5 + vec3(0.5),1.0);
 	OMR = texture( u_omr, v_uv );
 
+}
+
+\deferred_multi_pass.fs
+
+#version 330 core
+
+in vec2 v_uv;
+
+#include "light_uniforms"
+#include "shadows"
+
+uniform sampler2D u_albedo;
+uniform sampler2D u_normal_texture;
+uniform sampler2D u_omr;
+uniform sampler2D u_depth_texture;
+
+uniform mat4 u_inverse_viewprojection;
+uniform vec2 u_iRes;
+
+out vec4 FragColor;
+
+void main()
+{
+	//extract uvs from pixel screenpos
+	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
+
+	vec4 color = texture( u_albedo, uv );
+	
+	vec4 omr = texture( u_omr, uv );
+
+	float depth = texture( u_depth_texture, uv ).x;
+	vec4 screen_pos = vec4(uv.x*2.0-1.0, uv.y*2.0-1.0, depth*2.0-1.0, 1.0);
+	vec4 proj_worldpos = u_inverse_viewprojection * screen_pos;
+	vec3 world_pos = proj_worldpos.xyz / proj_worldpos.w;
+
+	vec3 N = texture( u_normal_texture, uv ).xyz*2.0-vec3(1.0);
+	N = normalize(N);
+	
+	vec3 total_light = vec3(0.0);
+
+	if(u_iteration == 0){
+		total_light += u_light_ambient;
+	}
+
+	total_light += computePhong(N,world_pos);
+
+	if(u_light_type != 0 && total_light != vec3(0.0)){
+		total_light *= computeShadow(world_pos);
+	}
+
+	color.xyz *= total_light;
+
+	FragColor = color;
 }
