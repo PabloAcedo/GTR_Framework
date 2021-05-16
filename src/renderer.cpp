@@ -203,7 +203,6 @@ void Renderer::renderMeshWithMaterial(eRenderMode mode, const Matrix44 model, Me
 			uploadExtraMap(shader, texture, "u_emissive", "u_has_emissive", 2);
 			texture = material->normal_texture.texture;
 			uploadExtraMap(shader, texture, "u_normal_map", "u_has_normal", 3);
-			shader->setUniform("u_camera_position", camera->eye);
 			commonUniforms(shader, model, material, camera, mesh, false);
 			shader->disable();
 		}
@@ -443,7 +442,7 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	glDisable(GL_BLEND);
 
-	if (fbo_gbuffers.fbo_id == 0) {
+	if (fbo_gbuffers.fbo_id == 0) {		//Initialize fbo
 		fbo_gbuffers.create(Application::instance->window_width,
 			Application::instance->window_height,
 			4, GL_RGBA, GL_UNSIGNED_BYTE);
@@ -536,6 +535,10 @@ void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera
 	shader->setUniform("u_iteration", iteration);
 	if (Scene::instance != NULL)
 		shader->setUniform("u_light_ambient", Scene::instance->ambient_light);
+
+	//disable depth test and blend!!
+	//glDisable(GL_DEPTH_TEST);
+	//glDisable(GL_BLEND);
 
 	//render a fullscreen quad
 	quad->render(GL_TRIANGLES);
