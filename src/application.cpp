@@ -243,7 +243,7 @@ void Application::renderDebugGUI(void)
 	ImGui::Text(getGPUStats().c_str());					   // Display some text (you can use a format strings too)
 
 	ImGui::Combo("Pipeline Mode", &renderer->current_mode_pipeline, renderer->optionsTextPipeline, IM_ARRAYSIZE(renderer->optionsTextPipeline));
-	renderer->changePipelineMode();
+
 	if(renderer->current_mode_pipeline == GTR::ePipelineMode::DEFERRED)
 		ImGui::Checkbox("Show gbuffers", &renderer->showGbuffers);
 
@@ -253,6 +253,7 @@ void Application::renderDebugGUI(void)
 	ImGui::Checkbox("Shadows", &renderer->cast_shadows);
 
 	ImGui::Combo("Render Mode", &renderer->current_mode, renderer->optionsText, IM_ARRAYSIZE(renderer->optionsText));
+	ImGui::Combo("Ilumination Mode", &renderer->current_mode_ilum, renderer->optionsTextIlum, IM_ARRAYSIZE(renderer->optionsTextIlum));
 	renderer->changeRenderMode();
 
 	//add info to the debug panel about the camera

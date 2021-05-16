@@ -50,63 +50,36 @@ void main()
 	gl_Position = u_viewprojection * vec4( v_world_position, 1.0 );
 }
 
-\light_uniforms
+\light_attenuation
 
-uniform vec3 u_light_pos;
-uniform vec3 u_light_ambient;
-uniform vec3 u_light_color;
-uniform vec3 u_light_direction;
-uniform int u_light_type;
-uniform float u_light_maxdist;
-uniform float u_cosCutoff;
-uniform float u_light_intensity;
-uniform float u_spot_exp;
-uniform int u_iteration;
-
-vec3 computePhong(vec3 N, vec3 world_position){
-
-	vec3 L; 
-	vec3 light = vec3(0.0);
-	float spotFactor = 1.0;
-	float att_factor = 1.0;
-	vec3 light_color = u_light_color;
-
-	if(u_light_type == 2){ //directional
+if(u_light_type == 2){ //directional
 		L = normalize(-u_light_direction);
-	}else{
-		L = normalize(u_light_pos - world_position);
-		//compute distance
-		float light_distance = length(u_light_pos - world_position);
+}else{
+	L = normalize(u_light_pos - world_position);
+	//compute distance
+	float light_distance = length(u_light_pos - world_position);
 
-		//compute a linear attenuation factor
-		att_factor = u_light_maxdist - light_distance;
+	//compute a linear attenuation factor
+	att_factor = u_light_maxdist - light_distance;
 
-		//normalize factor
-		att_factor /= u_light_maxdist;
+	//normalize factor
+	att_factor /= u_light_maxdist;
 
-		//ignore negative values
-		att_factor = max( att_factor, 0.0 );
+	//ignore negative values
+	att_factor = max( att_factor, 0.0 );
 
-		if(u_light_type == 1){ //spot
+	if(u_light_type == 1){ //spot
 			
-			vec3 D = normalize(u_light_direction);
+		vec3 D = normalize(u_light_direction);
 
-			float spotCos = dot(D,-L);
+		float spotCos = dot(D,-L);
 
-			if(spotCos >= u_cosCutoff){
-				spotFactor = pow(spotCos, u_spot_exp);
-			}else{
-				light_color = vec3(0.0);
-			}
+		if(spotCos >= u_cosCutoff){
+			spotFactor = pow(spotCos, u_spot_exp);
+		}else{
+			spotFactor = 0.0;
 		}
 	}
-
-	float NdotL = dot(N,L);
-	NdotL = clamp( NdotL, 0.0, 1.0 );	
-	
-	light += NdotL*light_color*u_light_intensity*att_factor*spotFactor;
-
-	return light;
 }
 
 \shadows
@@ -141,6 +114,233 @@ float computeShadow(vec3 world_position){
 	
 	return shadow_factor;
 }
+
+\light_uniforms
+
+uniform vec3 u_light_pos;
+uniform vec3 u_light_ambient;
+uniform vec3 u_light_color;
+uniform vec3 u_light_direction;
+uniform int u_light_type;
+uniform float u_light_maxdist;
+uniform float u_cosCutoff;
+uniform float u_light_intensity;
+uniform float u_spot_exp;
+uniform int u_iteration;
+
+struct sLVectors{
+	vec3 N;
+	vec3 L;
+	vec3 V;
+	vec3 R;
+	vec3 H;
+};
+
+struct sDots{
+	float NdotL;
+	float NdotV;
+	float NdotH;
+	float LdotH;
+};
+
+
+sLVectors set_vectors(vec2 uv, vec3 N, vec3 cam_pos, vec3 world_position){
+	sLVectors vectors;
+
+	vectors.N = N;	
+	vectors.V = normalize(cam_pos - world_position);
+	vectors.R = normalize(reflect(-vectors.L,vectors.N));
+	vectors.H = normalize(vectors.V + vectors.L);
+
+	return vectors;
+}
+
+sDots computeDots(sLVectors vectors){
+	sDots dots;
+	float low_clamp_factor = 0.001;
+	dots.NdotL = max(low_clamp_factor,dot(vectors.N,vectors.L));
+	dots.NdotV = max(low_clamp_factor,dot(vectors.N,vectors.V));
+	dots.NdotH = max(low_clamp_factor,dot(vectors.N,vectors.H));
+	dots.LdotH = max(low_clamp_factor,dot(vectors.L, vectors.H));
+	return dots;
+} 
+
+
+//PBR
+#define RECIPROCAL_PI 0.3183098861837697
+#define PI 3.14159265359
+
+
+// Normal Distribution Function using GGX Distribution
+float D_GGX (	const in float NoH, const in float linearRoughness ){
+	float a2 = linearRoughness * linearRoughness;
+	float f = (NoH * NoH) * (a2 - 1.0) + 1.0;
+	return a2 / (PI * f * f);
+}
+
+// Fresnel term with scalar optimization(f90=1)
+float F_SchlickF( const in float VoH, const in float f0){
+	float f = pow(1.0 - VoH, 5.0);
+	return f0 + (1.0 - f0) * f;
+}
+
+
+// Fresnel term with colorized fresnel
+vec3 F_SchlickV( const in float VoH, const in vec3 f0){
+	float f = pow(1.0 - VoH, 5.0);
+	return f0 + (vec3(1.0) - f0) * f;
+}
+
+float GGX(float NdotV, float k){
+	return NdotV / (NdotV * (1.0 - k) + k);
+}
+	
+float G_Smith( float NdotV, float NdotL, float roughness)
+{
+	float k = pow(roughness + 1.0, 2.0) / 8.0;
+	return GGX(NdotL, k) * GGX(NdotV, k);
+}
+
+
+vec3 specularBRDF( float roughness, vec3 f0, sDots dots){
+	float a = roughness * roughness;
+
+	// Normal Distribution Function
+	float D = D_GGX( dots.NdotH, a );
+
+	// Fresnel Function
+	vec3 F = F_SchlickV( dots.LdotH, f0 );
+
+	// Visibility Function (shadowing/masking)
+	float G = G_Smith( dots.NdotV, dots.NdotL, roughness );
+		
+	// Norm factor
+	vec3 spec = D * G * F;
+	spec /= (4.0 * dots.NdotL * dots.NdotV + 1e-6);
+
+	return spec;
+}
+
+#include "shadows"
+
+vec3 computePBR(sLVectors vectors, vec3 world_position, float roughness, vec3 F0, vec3 Cdiffuse){
+	
+	vec3 L; 
+	float spotFactor = 1.0;
+	float att_factor = 1.0;
+
+	#include "light_attenuation"
+
+	vectors.L = L;
+
+	sDots dots = computeDots(vectors);
+
+	vec3 specular = specularBRDF(roughness, F0, dots);
+
+	vec3 diffuse = Cdiffuse*dots.NdotL;
+
+	vec3 direct = diffuse + specular;
+
+	vec3 light_param = u_light_color*u_light_intensity*att_factor*spotFactor;
+
+	vec3 light = direct*light_param;
+
+	if(u_light_type != 0 && light != vec3(0.0)){
+		light *= computeShadow(world_position);
+	}
+
+	return light;
+}
+
+
+vec3 computePhong(vec3 N, vec3 world_position){
+
+	vec3 L; 
+	vec3 light = vec3(0.0);
+	float spotFactor = 1.0;
+	float att_factor = 1.0;
+	vec3 light_color = u_light_color;
+
+	#include "light_attenuation"
+
+	float NdotL = dot(N,L);
+	NdotL = clamp( NdotL, 0.0, 1.0 );	
+	
+	light += NdotL*light_color*u_light_intensity*att_factor*spotFactor;
+
+	if(u_light_type != 0 && light != vec3(0.0)){
+		light *= computeShadow(world_position);
+	}
+
+	return light;
+
+}
+
+\color_correction
+#define GAMMA 2.2
+#define INV_GAMMA 0.45
+
+vec3 toneMap(vec3 color)
+{
+    return color / (color + vec3(1.0));
+}
+
+// degamma
+vec3 gamma_to_linear(vec3 color)
+{
+	return pow(color, vec3(GAMMA));
+}
+
+// gamma
+vec3 linear_to_gamma(vec3 color)
+{
+	return pow(color, vec3(INV_GAMMA));
+}
+
+\material 
+
+#include "color_correction"
+
+uniform sampler2D u_albedo;
+uniform sampler2D u_omr;
+uniform sampler2D u_emissive;
+uniform bool u_has_omr;
+
+struct sMaterial
+{
+	vec4 albedo; //albedo color RGB
+	vec3 F0; //Fresnel value RGB
+	vec3 Cdiffuse; //diffuse value
+	float metalness; //metalness
+	float roughness; //roughness
+	float ao; //baked ambient occlusion
+	vec3 emission; //emissive 
+};
+
+//init all the material properties
+sMaterial init_material(vec2 uv){
+	sMaterial material;
+
+	material.albedo = texture2D( u_albedo, uv ); 
+	//degamma
+	material.albedo.xyz = gamma_to_linear(material.albedo.xyz);
+	
+	if(u_has_omr){
+		material.roughness = max(0.01, texture2D( u_omr, uv ).z); 
+		material.metalness = min(texture2D( u_omr, uv ).y,0.99);
+	}else{
+		material.roughness = 0.5; 
+		material.metalness = 0.5;
+	}
+
+	material.F0 = mix( vec3(0.5), material.albedo.xyz, material.metalness );
+	material.Cdiffuse = material.albedo.xyz*(vec3(1.0) - vec3(material.metalness));
+
+	material.ao = texture2D(u_omr, uv).x;
+	material.emission = texture2D(u_emissive,uv).xyz;
+	return material;
+}
+
 
 \realistic_normals
 mat3 cotangent_frame(vec3 N, vec3 p, vec2 uv)
@@ -184,10 +384,7 @@ in vec4 v_color;
 
 uniform vec4 u_color;
 
-uniform sampler2D u_texture;
 uniform sampler2D u_normal_map;
-uniform sampler2D u_emissive;
-uniform sampler2D u_omr;
 
 uniform float u_time;
 uniform float u_alpha_cutoff;
@@ -196,30 +393,33 @@ uniform mat4 u_model;
 uniform vec3 u_camera_position;
 
 #include "light_uniforms"
-
-#include "shadows"
+#include "material"
 
 #include "realistic_normals"
 
 //uniform float u_emissive_factor;
 uniform bool u_has_emissive;
 uniform bool u_has_normal;
-uniform bool u_has_omr;
 
 uniform bool u_has_shadows;
+
+uniform int u_ilum_mode;
 
 out vec4 FragColor;
 
 void main()
 {
 	vec4 color = u_color;
-	color *= texture( u_texture, v_uv );
+
+	sMaterial material = init_material(v_uv);
+
+	color *= material.albedo;
 
 	vec3 total_light = vec3(0.0);
 	if(u_iteration == 0){
 		total_light += u_light_ambient;
-		if(u_has_omr){
-			total_light *= vec3(texture( u_omr, v_uv ).x);
+		if(u_has_omr) {
+			total_light *= material.ao;
 		}
 	}
 	
@@ -232,20 +432,25 @@ void main()
 		N = perturbNormal(N, V, v_uv, np);
 	}
 
-	total_light += computePhong(N,v_world_position);
-
-	if(u_light_type == 1 || u_light_type == 2 && total_light != vec3(0.0)){
-		total_light *= computeShadow(v_world_position);
+	if(u_ilum_mode == 0){
+		total_light += computePhong(N,v_world_position);
+	}else if(u_ilum_mode == 1){
+		sLVectors vectors = set_vectors(v_uv, N, u_camera_position, v_world_position);
+		vec3 PBR = computePBR(vectors, v_world_position, material.roughness, material.F0, material.Cdiffuse);
+		total_light += PBR;
 	}
 	
 	color.xyz *= total_light; 
 
-	if(u_has_emissive && u_iteration == 0){
-		color.xyz += texture( u_emissive, v_uv ).xyz;//*u_emissive_factor;
-	}
-	
 	if(color.a < u_alpha_cutoff)
 		discard;
+
+	color.xyz = toneMap(color.xyz);
+	color.xyz = linear_to_gamma(color.xyz);
+
+	if(u_iteration == 0 && u_has_emissive){
+		color.xyz += material.emission;
+	}
 
 	FragColor = color;	
 }
@@ -262,7 +467,7 @@ in vec4 v_color;
 
 uniform vec4 u_color;
 
-uniform sampler2D u_texture;
+uniform sampler2D u_albedo;
 uniform sampler2D u_normal_map;
 uniform sampler2D u_emissive;
 uniform sampler2D u_omr;
@@ -331,7 +536,7 @@ void main()
 	}
 
 	vec4 color = u_color;
-	color *= texture( u_texture, v_uv );
+	color *= texture( u_albedo, v_uv );
 
 	//light equation vectors
 	vec3 N = normalize(v_normal);
@@ -440,7 +645,7 @@ in vec2 v_uv;
 in vec4 v_color;
 
 uniform vec4 u_color;
-uniform sampler2D u_texture;
+uniform sampler2D u_albedo;
 uniform float u_time;
 uniform float u_alpha_cutoff;
 
@@ -450,7 +655,7 @@ void main()
 {
 	vec2 uv = v_uv;
 	vec4 color = u_color;
-	color *= texture( u_texture, v_uv );
+	color *= texture( u_albedo, v_uv );
 
 	if(color.a < u_alpha_cutoff)
 		discard;
@@ -469,7 +674,7 @@ in vec3 v_normal;
 in vec2 v_uv;
 
 uniform vec4 u_color;
-uniform sampler2D u_texture;
+uniform sampler2D u_albedo;
 uniform float u_time;
 uniform float u_alpha_cutoff;
 
@@ -480,7 +685,7 @@ void main()
 {
 	vec2 uv = v_uv;
 	vec4 color = u_color;
-	color *= texture( u_texture, uv );
+	color *= texture( u_albedo, uv );
 
 	if(color.a < u_alpha_cutoff)
 		discard;
@@ -564,7 +769,7 @@ in vec4 v_color;
 uniform vec4 u_color;
 uniform float u_alpha_cutoff;
 
-uniform sampler2D u_texture;
+uniform sampler2D u_albedo;
 uniform sampler2D u_omr;
 uniform sampler2D u_normal_map;
 uniform sampler2D u_emissive;
@@ -585,7 +790,7 @@ void main()
 {
 	vec2 uv = v_uv;
 	vec4 color = u_color;
-	color *= texture( u_texture, v_uv );
+	color *= texture( u_albedo, v_uv );
 
 	vec3 N = normalize(v_normal);
 
@@ -612,16 +817,15 @@ void main()
 in vec2 v_uv;
 
 #include "light_uniforms"
-#include "shadows"
+#include "material"
 
-uniform sampler2D u_albedo;
-uniform sampler2D u_normal_texture;
-uniform sampler2D u_omr;
 uniform sampler2D u_depth_texture;
-uniform sampler2D u_emissive_color;
+uniform sampler2D u_normal_texture;
 
 uniform mat4 u_inverse_viewprojection;
 uniform vec2 u_iRes;
+uniform vec3 u_camera_position;
+uniform int u_ilum_mode;
 
 out vec4 FragColor;
 
@@ -630,11 +834,9 @@ void main()
 	//extract uvs from pixel screenpos
 	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
 
-	vec4 color = texture( u_albedo, uv );
-	
-	vec4 omr = texture( u_omr, uv );
+	sMaterial material = init_material(uv);
 
-	vec4 emissive = texture( u_emissive_color, uv );
+	vec4 color = material.albedo;
 
 	float depth = texture( u_depth_texture, uv ).x;
 	vec4 screen_pos = vec4(uv.x*2.0-1.0, uv.y*2.0-1.0, depth*2.0-1.0, 1.0);
@@ -648,21 +850,27 @@ void main()
 
 	if(u_iteration == 0){
 		total_light += u_light_ambient;
-		total_light *= omr.x;
+		total_light *= material.ao;
 	}
 
-	total_light += computePhong(N,world_pos);
+	if(u_ilum_mode == 0){
 
-	if(u_light_type != 0 && total_light != vec3(0.0)){
-		total_light *= computeShadow(world_pos);
+		total_light += computePhong(N,world_pos);
+
+	}else if(u_ilum_mode == 1){
+		sLVectors vectors = set_vectors(uv, N, u_camera_position, world_pos);
+		vec3 PBR = computePBR(vectors, world_pos, material.roughness, material.F0, material.Cdiffuse);
+		total_light += PBR;
 	}
 
 	color.xyz *= total_light;
+	
+	color.xyz = toneMap(color.xyz);
+	color.xyz = linear_to_gamma(color.xyz);
 
 	if(u_iteration == 0){
-		color.xyz += emissive.xyz;
+		color.xyz += material.emission;
 	}
-	
 
 	FragColor = color;
 }

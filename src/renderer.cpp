@@ -33,12 +33,13 @@ bool sortByDistance(RenderCall* i, RenderCall* j) {
 
 Renderer::Renderer() {
 	current_mode =  1;
-	current_mode_pipeline = 0;
+	current_mode_pipeline = current_mode_ilum = 0;
 	renderingShadows = false;
 	render_mode = GTR::eRenderMode::LIGHT_MULTI;
 	pipeline_mode = GTR::ePipelineMode::FORWARD;
 	showGbuffers = false;
 	cast_shadows = true;
+	ilum_mode = GTR::eIlumMode::PHONG;
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
@@ -240,7 +241,7 @@ void Renderer::commonUniforms(Shader*& shader, const Matrix44 model, GTR::Materi
 
 	texture = material->color_texture.texture;
 	if (texture)
-		shader->setUniform("u_texture", texture, 0);
+		shader->setUniform("u_albedo", texture, 0);
 
 	if (!fromOther)
 		mesh->render(GL_TRIANGLES);
@@ -249,15 +250,19 @@ void Renderer::commonUniforms(Shader*& shader, const Matrix44 model, GTR::Materi
 void Renderer::uploadExtraMap(Shader*& shader, Texture* texture, const char* uniform_name, const char* bool_name, int tex_slot) {
 	if (texture) {
 		shader->setUniform(bool_name, true);
+		shader->setUniform(uniform_name, texture, tex_slot);
 	}
 	else {
-		texture = Texture::getWhiteTexture();
-		if (uniform_name == "u_emissive")
-			texture = Texture::getBlackTexture();
+		if (pipeline_mode == GTR::ePipelineMode::DEFERRED) {
+			texture = Texture::getWhiteTexture();
+			if (uniform_name == "u_emissive")
+				texture = Texture::getBlackTexture();
 
+			shader->setUniform(uniform_name, texture, tex_slot);
+		}
 		shader->setUniform(bool_name, false);
 	}
-	shader->setUniform(uniform_name, texture, tex_slot);
+	
 }
 
 void Renderer::multipassUniforms(GTR::LightEntity* light, Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh, int iteration) {
@@ -277,7 +282,7 @@ void Renderer::multipassUniforms(GTR::LightEntity* light, Shader*& shader, const
 
 	texture = material->metallic_roughness_texture.texture;
 	uploadExtraMap(shader, texture, "u_omr", "u_has_omr", 3);
-
+	shader->setUniform("u_ilum_mode", ilum_mode);
 	
 	//this is used to say which is the alpha threshold to what we should not paint a pixel on the screen (to cut polygons according to texture alpha)
 	shader->setUniform("u_alpha_cutoff", material->alpha_mode == GTR::eAlphaMode::MASK ? material->alpha_cutoff : 0);
@@ -320,7 +325,7 @@ void Renderer::singlepassUniforms(Shader*& shader, const Matrix44 model, GTR::Ma
 	commonUniforms(shader, model, material, camera, mesh, true);//upload common uniforms
 
 	texture = material->emissive_texture.texture;
-	uploadExtraMap(shader, texture, "u_emissive", "u_has_emissive", 1);
+	uploadExtraMap(shader, texture, "u_emissive_color", "u_has_emissive", 1);
 
 	texture = material->normal_texture.texture;
 	uploadExtraMap(shader, texture, "u_normal_map", "u_has_normal", 2);
@@ -408,6 +413,8 @@ void Renderer::changeRenderMode() {
 	else if (current_mode == 2) {
 		render_mode = GTR::eRenderMode::LIGHT_SINGLE;
 	}
+	changePipelineMode();
+	changeIlumMode();
 }
 
 void Renderer::changePipelineMode() {
@@ -416,6 +423,16 @@ void Renderer::changePipelineMode() {
 	}
 	else if (current_mode_pipeline == 1) {
 		pipeline_mode = GTR::ePipelineMode::DEFERRED;
+	}
+
+}
+
+void Renderer::changeIlumMode() {
+	if (current_mode_ilum == 0) {
+		ilum_mode = GTR::eIlumMode::PHONG;
+	}
+	else if (current_mode_ilum == 1) {
+		ilum_mode = GTR::eIlumMode::PBR;
 	}
 
 }
@@ -499,12 +516,16 @@ void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera
 	shader->setUniform("u_normal_texture", fbo_gbuffers.color_textures[1], 1);
 	shader->setUniform("u_omr", fbo_gbuffers.color_textures[2], 2);
 	shader->setUniform("u_depth_texture", fbo_gbuffers.depth_texture, 3);
-	shader->setUniform("u_emissive_color", fbo_gbuffers.color_textures[3], 4);
+	shader->setUniform("u_emissive", fbo_gbuffers.color_textures[3], 4);
+	shader->setUniform("u_ilum_mode", ilum_mode);
+	shader->setUniform("u_has_omr", true);
 
 	Matrix44 vp_inv = camera->viewprojection_matrix;
 	vp_inv.inverse();
 	//pass the inverse projection of the camera to reconstruct world pos.
 	shader->setUniform("u_inverse_viewprojection", vp_inv);
+
+	shader->setUniform("u_camera_position", camera->eye);
 
 	//pass the inverse window resolution, this may be useful
 	int width = Application::instance->window_width;

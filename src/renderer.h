@@ -22,6 +22,11 @@ namespace GTR {
 		DEFERRED
 	};
 
+	enum eIlumMode {
+		PHONG,
+		PBR
+	};
+
 	class Prefab;
 	class Material;
 
@@ -44,6 +49,7 @@ namespace GTR {
 
 		eRenderMode render_mode;
 		ePipelineMode pipeline_mode;
+		eIlumMode ilum_mode;
 
 		std::vector<RenderCall*> renderCalls;
 		std::vector<RenderCall*> renderCalls_Blending;
@@ -52,10 +58,13 @@ namespace GTR {
 
 		int current_mode;
 		int current_mode_pipeline;
+		int current_mode_ilum;
 
 		const char* optionsText[3] = { {"Texture"},{"Multipass"},{"SinglePass"} };
 
 		const char* optionsTextPipeline[2] = {{"Forward"},{"Deferred"}};
+
+		const char* optionsTextIlum[2] = { {"Phong"},{"PBR"} };
 
 		bool renderingShadows;
 
@@ -96,6 +105,7 @@ namespace GTR {
 		void changeRenderMode();
 
 		void changePipelineMode();
+		void changeIlumMode();
 
 		void renderForward(Scene* scene, std::vector<RenderCall*>& rc, Camera* camera);
 
