@@ -441,8 +441,8 @@ void Renderer::changeIlumMode() {
 void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera* camera) {
 
 	glDisable(GL_BLEND);
-
-	if (fbo_gbuffers.fbo_id == 0) {		//Initialize fbo
+	int w = fbo_gbuffers.width; int h = fbo_gbuffers.height;
+	if (fbo_gbuffers.fbo_id == 0 || (w != Application::instance->window_width) || (h != Application::instance->window_height)) {//Initialize fbo
 		fbo_gbuffers.create(Application::instance->window_width,
 			Application::instance->window_height,
 			4, GL_RGBA, GL_UNSIGNED_BYTE);

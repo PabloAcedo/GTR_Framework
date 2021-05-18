@@ -296,7 +296,12 @@ void GTR::LightEntity::configure(cJSON* json) {
 
 }
 
+Vector3 gamma_to_linear(Vector3 color) {
+	
+}
+
 void GTR::LightEntity::uploadUniforms(Shader*& shader) {
+	
 	shader->setUniform("u_light_color", this->color);
 	shader->setUniform("u_light_pos", this->model.getTranslation());
 	shader->setUniform("u_light_type", light_type);
