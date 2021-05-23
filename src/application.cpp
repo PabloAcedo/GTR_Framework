@@ -244,8 +244,11 @@ void Application::renderDebugGUI(void)
 
 	ImGui::Combo("Pipeline Mode", &renderer->current_mode_pipeline, renderer->optionsTextPipeline, IM_ARRAYSIZE(renderer->optionsTextPipeline));
 
-	if(renderer->current_mode_pipeline == GTR::ePipelineMode::DEFERRED)
+	if (renderer->current_mode_pipeline == GTR::ePipelineMode::DEFERRED) {
 		ImGui::Checkbox("Show gbuffers", &renderer->showGbuffers);
+		ImGui::Checkbox("Show SSAO map", &renderer->showSSAO);
+	}
+		
 
 	ImGui::Checkbox("Wireframe", &render_wireframe);
 	ImGui::ColorEdit3("BG color", scene->background_color.v);

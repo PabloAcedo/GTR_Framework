@@ -40,6 +40,8 @@ Renderer::Renderer() {
 	showGbuffers = false;
 	cast_shadows = true;
 	ilum_mode = GTR::eIlumMode::PHONG;
+	ao_map = NULL;
+	showSSAO = false;
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
@@ -447,6 +449,7 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 			Application::instance->window_height,
 			4, GL_RGBA, GL_UNSIGNED_BYTE);
 	}
+	w = fbo_gbuffers.width; h = fbo_gbuffers.height;
 
 	//render gbuffers
 	fbo_gbuffers.bind();
@@ -461,6 +464,23 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	fbo_gbuffers.unbind();
 
+
+	//ssao+
+	if (ao_map == NULL || ao_map->width != w || ao_map->height != h) {
+		ao_map = new Texture(w, h, GL_RGB, GL_UNSIGNED_BYTE);
+	}
+
+	//bind the texture we want to change
+	fbo_gbuffers.depth_texture->bind();
+
+	//enable bilinear filtering
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	fbo_gbuffers.depth_texture->unbind();
+
+	ssao.compute(fbo_gbuffers.depth_texture, fbo_gbuffers.color_textures[1], camera, ao_map);
+
+	//Render deferred
 	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	checkGLErrors();
@@ -475,6 +495,11 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	if(showGbuffers)
 		showgbuffers(camera);
+
+	if (showSSAO) {
+		ao_map->toViewport();
+	}
+	
 }
 
 void GTR::Renderer::showgbuffers(Camera* camera) {
@@ -518,6 +543,7 @@ void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera
 	shader->setUniform("u_emissive", fbo_gbuffers.color_textures[3], 4);
 	shader->setUniform("u_ilum_mode", ilum_mode);
 	shader->setUniform("u_has_omr", true);
+	shader->setUniform("u_ssao", ao_map, 5);
 
 	Matrix44 vp_inv = camera->viewprojection_matrix;
 	vp_inv.inverse();
@@ -574,3 +600,78 @@ Texture* GTR::CubemapFromHDRE(const char* filename)
 	*/
 	return NULL;
 }
+
+std::vector<Vector3> generateSpherePoints(int num, float radius, bool hemi)
+{
+	std::vector<Vector3> points;
+	points.resize(num);
+	for (int i = 0; i < num; i += 3)
+	{
+		Vector3& p = points[i];
+		float u = random();
+		float v = random();
+		float theta = u * 2.0 * PI;
+		float phi = acos(2.0 * v - 1.0);
+		float r = cbrt(random() * 0.9 + 0.1) * radius;
+		float sinTheta = sin(theta);
+		float cosTheta = cos(theta);
+		float sinPhi = sin(phi);
+		float cosPhi = cos(phi);
+		p.x = r * sinPhi * cosTheta;
+		p.y = r * sinPhi * sinTheta;
+		p.z = r * cosPhi;
+		if (hemi && p.z < 0)
+			p.z *= -1.0;
+	}
+	return points;
+}
+
+GTR::SSAOFX::SSAOFX(){
+	points = generateSpherePoints(512, 1.0, true);
+}
+
+void GTR::SSAOFX::compute(Texture* depth_buffer, Texture* normal_buffer, Camera* camera, Texture* output){
+	//FBO* fbo = Texture::getGlobalFBO(output);
+	int w = ao_fbo.width; int h = ao_fbo.height;
+	if (ao_fbo.fbo_id == 0 || (w != Application::instance->window_width) || (h != Application::instance->window_height)) {//Initialize fbo
+		ao_fbo.create(Application::instance->window_width,
+			Application::instance->window_height,
+			1, GL_RGBA, GL_UNSIGNED_BYTE);
+	}
+	ao_fbo.setTexture(output);
+	ao_fbo.bind();
+	
+	Shader* shader = Shader::Get("ssao");
+	if (shader == NULL) 
+		return;
+
+	Mesh* quad = Mesh::getQuad();
+
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+
+	shader->enable();
+	shader->setUniform("u_depth_texture", depth_buffer, 3);
+	shader->setUniform("u_normal_texture", normal_buffer, 1);
+
+	shader->setUniform("u_camera_pos", camera->eye);
+	shader->setUniform("u_viewprojection", camera->viewprojection_matrix);
+	Matrix44 inv_vp = camera->viewprojection_matrix;
+	inv_vp.inverse();
+	shader->setUniform("u_inverse_viewprojection", inv_vp);
+
+	shader->setUniform3Array("u_points", points[0].v, points.size());
+
+	//pass the inverse window resolution, this may be useful
+	int width = Application::instance->window_width;
+	int height = Application::instance->window_height;
+	shader->setUniform("u_iRes", Vector2(1.0 / (float)width, 1.0 / (float)height));
+
+	quad->render(GL_TRIANGLES);
+	shader->disable();
+
+	ao_fbo.unbind();
+}
+
+
+

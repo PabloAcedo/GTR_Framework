@@ -30,6 +30,15 @@ namespace GTR {
 	class Prefab;
 	class Material;
 
+	class SSAOFX {
+	public:
+
+		std::vector<Vector3> points;
+		FBO ao_fbo;
+		SSAOFX();
+		void compute(Texture* depth_buffer, Texture* normal_buffer, Camera* camera, Texture* output);
+	};
+
 	class RenderCall {
 	public:
 		Matrix44 model;
@@ -47,6 +56,7 @@ namespace GTR {
 
 	public:
 
+		
 		eRenderMode render_mode;
 		ePipelineMode pipeline_mode;
 		eIlumMode ilum_mode;
@@ -55,6 +65,9 @@ namespace GTR {
 		std::vector<RenderCall*> renderCalls_Blending;
 
 		FBO fbo_gbuffers;
+
+		SSAOFX ssao;
+		Texture* ao_map;
 
 		int current_mode;
 		int current_mode_pipeline;
@@ -71,6 +84,8 @@ namespace GTR {
 		bool cast_shadows;
 
 		bool showGbuffers;
+
+		bool showSSAO;
 
 		Renderer();
 
