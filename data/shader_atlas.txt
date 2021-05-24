@@ -159,10 +159,17 @@ sLVectors set_vectors(vec2 uv, vec3 N, vec3 cam_pos, vec3 world_position){
 sDots computeDots(sLVectors vectors){
 	sDots dots;
 	float low_clamp_factor = 0.001;
-	dots.NdotL = max(low_clamp_factor,dot(vectors.N,vectors.L));
+	
+	/*dots.NdotL = max(low_clamp_factor,dot(vectors.N,vectors.L));
 	dots.NdotV = max(low_clamp_factor,dot(vectors.N,vectors.V));
 	dots.NdotH = max(low_clamp_factor,dot(vectors.N,vectors.H));
-	dots.LdotH = max(low_clamp_factor,dot(vectors.L, vectors.H));
+	dots.LdotH = max(low_clamp_factor,dot(vectors.L, vectors.H));*/
+
+	dots.NdotL = clamp(dot(vectors.N,vectors.L),0.001,0.99);
+	dots.NdotV = clamp(dot(vectors.N,vectors.V),0.001,0.99);
+	dots.NdotH = clamp(dot(vectors.N,vectors.H),0.001,0.99);
+	dots.LdotH = clamp(dot(vectors.L, vectors.H),0.001,0.99);
+
 	return dots;
 } 
 
