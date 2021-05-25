@@ -61,7 +61,7 @@
 			"light_color":[1,0.2,0.1],
 			"light_type": "point",
 			"max_dist": 70,
-			"intensity":2.5
+			"intensity":10
 		},
 		{
 			"name":"pointlight2",
@@ -70,7 +70,7 @@
 			"light_color":[1,0.2,0.1],
 			"light_type": "point",
 			"max_dist": 70,
-			"intensity":2.5
+			"intensity":10
 		},
 		{
 			"name":"spot",
@@ -88,9 +88,9 @@
 			"name":"moonlight",
 			"type":"LIGHT",
 			"position":[150,300,50],
-			"light_color":[1.0,1.0,0.1222],
+			"light_color":[0.5,0.5,0.8],
 			"light_type": "directional",
-			"intensity":1.5,
+			"intensity":10.0,
 			"area_size":1500,
 			"max_dist":1000,
 			"target":[-80,0,-50]

@@ -227,7 +227,7 @@ void GTR::LightEntity::renderInMenu() {
 	if (visible) {
 		ImGui::ColorEdit3("Light Color", color.v);
 		ImGui::SliderFloat("Max distance", &max_dist, 1.0, 5000.0);
-		ImGui::SliderFloat("Intensity", &intensity, 1.0, 10.0);
+		ImGui::SliderFloat("Intensity", &intensity, 1.0, 50.0);
 
 		if (light_type == GTR::eLightType::SPOT) {
 			ImGui::SliderFloat("Cutoff Angle", &cone_angle, 1.0, 80.0);

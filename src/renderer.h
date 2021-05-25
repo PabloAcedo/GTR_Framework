@@ -35,6 +35,8 @@ namespace GTR {
 
 		std::vector<Vector3> points;
 		FBO ao_fbo;
+		float bias_slider;
+		float radius_slider;
 		SSAOFX();
 		void compute(Texture* depth_buffer, Texture* normal_buffer, Camera* camera, Texture* output);
 	};
@@ -72,6 +74,8 @@ namespace GTR {
 		int current_mode;
 		int current_mode_pipeline;
 		int current_mode_ilum;
+
+		float bias_slider;
 
 		const char* optionsText[3] = { {"Texture"},{"Multipass"},{"SinglePass"} };
 

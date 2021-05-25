@@ -259,6 +259,9 @@ void Application::renderDebugGUI(void)
 	ImGui::Combo("Ilumination Mode", &renderer->current_mode_ilum, renderer->optionsTextIlum, IM_ARRAYSIZE(renderer->optionsTextIlum));
 	renderer->changeRenderMode();
 
+	ImGui::SliderFloat("bias_ao", &renderer->ssao.bias_slider, 0.001, 0.6);
+	ImGui::SliderFloat("radius_ao", &renderer->ssao.radius_slider, 1.0, 30.0);
+
 	//add info to the debug panel about the camera
 	if (ImGui::TreeNode(camera, "Camera")) {
 		camera->renderInMenu();

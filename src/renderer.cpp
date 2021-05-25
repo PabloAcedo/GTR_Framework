@@ -42,6 +42,7 @@ Renderer::Renderer() {
 	ilum_mode = GTR::eIlumMode::PHONG;
 	ao_map = NULL;
 	showSSAO = false;
+	bias_slider = 0.5;
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
@@ -627,7 +628,9 @@ std::vector<Vector3> generateSpherePoints(int num, float radius, bool hemi)
 }
 
 GTR::SSAOFX::SSAOFX(){
-	points = generateSpherePoints(512, 1.0, true);
+	points = generateSpherePoints(64, 1.0, true);
+	bias_slider = 0.015;
+	radius_slider = 10.0f;
 }
 
 void GTR::SSAOFX::compute(Texture* depth_buffer, Texture* normal_buffer, Camera* camera, Texture* output){
@@ -661,6 +664,10 @@ void GTR::SSAOFX::compute(Texture* depth_buffer, Texture* normal_buffer, Camera*
 	shader->setUniform("u_inverse_viewprojection", inv_vp);
 
 	shader->setUniform3Array("u_points", points[0].v, points.size());
+
+
+	shader->setUniform("u_bias_slider", bias_slider);
+	shader->setUniform("u_radius", radius_slider);
 
 	//pass the inverse window resolution, this may be useful
 	int width = Application::instance->window_width;
