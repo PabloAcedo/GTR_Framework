@@ -61,7 +61,7 @@
 			"light_color":[1,0.02,0.0],
 			"light_type": "point",
 			"max_dist": 70,
-			"intensity":10
+			"intensity":5
 		},
 		{
 			"name":"pointlight2",
@@ -70,7 +70,7 @@
 			"light_color":[1,0.02,0.0],
 			"light_type": "point",
 			"max_dist": 70,
-			"intensity":10
+			"intensity":5
 		},
 		{
 			"name":"spot",
@@ -80,7 +80,7 @@
 			"light_color":[1,0.9,0.8],
 			"light_type": "spot",
 			"max_dist": 1000.0,
-			"intensity":15,
+			"intensity":5,
 			"cone_angle":45.0,
 			"spot_exp": 60.0
 		},
@@ -90,7 +90,7 @@
 			"position":[150,300,50],
 			"light_color":[0.2,0.2,0.2],
 			"light_type": "directional",
-			"intensity":5,
+			"intensity":1.5,
 			"area_size":1500,
 			"max_dist":1000,
 			"target":[-80,0,-50]

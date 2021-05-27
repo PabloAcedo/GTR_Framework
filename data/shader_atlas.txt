@@ -121,11 +121,6 @@ float computeShadow(vec3 world_position){
 #define GAMMA 2.2
 #define INV_GAMMA 0.45
 
-vec3 toneMap(vec3 color)
-{
-    return color / (color + vec3(1.0));
-}
-
 // degamma
 vec3 gamma_to_linear(vec3 color)
 {
@@ -338,8 +333,10 @@ sMaterial init_material(vec2 uv){
 	material.albedo.xyz = gamma_to_linear(material.albedo.xyz);
 	
 	if(u_has_omr){
-		material.roughness = max(0.01, texture2D( u_omr, uv ).z); 
-		material.metalness = min(texture2D( u_omr, uv ).y,0.99);
+		//material.roughness = max(0.01, texture2D( u_omr, uv ).z); 
+		//material.metalness = min(texture2D( u_omr, uv ).y,0.99);
+		material.roughness = max(0.01, texture2D( u_omr, uv ).y); 
+		material.metalness = min(texture2D( u_omr, uv ).z,0.99);
 	}else{
 		material.roughness = 1.0; 
 		material.metalness = 1.0;
@@ -1011,7 +1008,7 @@ void main()
 		if( pdepth < proj.z ) //if true depth smaller, is inside
 			num--; //remove this point from the list of visible
 
-		//Mirar si la distancia (en lineal) entre el punt i el test es gran, no tenir en compte l'oclusió
+		//Mirar si la distancia (en lineal) entre el punt i el test es gran, no tenir en compte l'oclusiï¿½
 	}
 
 	//finally, compute the AO factor as the ratio of visible points
