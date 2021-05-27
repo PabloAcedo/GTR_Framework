@@ -15,6 +15,7 @@ GTR::Scene* GTR::Scene::instance = NULL;
 
 GTR::Scene::Scene()
 {
+	phong = false;
 	instance = this;
 	
 }
@@ -296,19 +297,24 @@ void GTR::LightEntity::configure(cJSON* json) {
 
 }
 
-Vector3 gamma_to_linear(Vector3 color) {
-	
+void gamma_to_linear(Vector3& color) {
+	color.x = pow(color.x, INV_GAMMA);
+	color.y = pow(color.y, INV_GAMMA);
+	color.z = pow(color.z, INV_GAMMA);
 }
 
 void GTR::LightEntity::uploadUniforms(Shader*& shader) {
-	
 	shader->setUniform("u_light_color", this->color);
 	shader->setUniform("u_light_pos", this->model.getTranslation());
 	shader->setUniform("u_light_type", light_type);
 	shader->setUniform("u_light_maxdist", max_dist);
 	shader->setUniform("u_light_direction", model.frontVector());
 	shader->setUniform("u_cosCutoff", (float)cos(cone_angle * DEG2RAD));
-	shader->setUniform("u_light_intensity", intensity);
+	if(Scene::instance->phong)
+		shader->setUniform("u_light_intensity", intensity/4);
+	else
+		shader->setUniform("u_light_intensity", intensity);
+
 	shader->setUniform("u_spot_exp", spotExp);
 
 	if (light_type != POINT) {

@@ -2,6 +2,8 @@
 #define SCENE_H
 
 #define MAX_LIGHTS 5
+#define GAMMA 2.2
+#define INV_GAMMA 0.45
 
 #include "framework.h"
 #include "camera.h"
@@ -102,6 +104,8 @@ namespace GTR {
 		Vector3 ambient_light;
 		Camera main_camera;
 		std::vector<LightEntity*> lights;
+
+		bool phong;
 
 		//single pass light data
 		Vector3 light_pos[MAX_LIGHTS];
