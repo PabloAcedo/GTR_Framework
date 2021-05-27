@@ -973,6 +973,8 @@ void main()
 		//compare true depth with its depth
 		if( pdepth < proj.z ) //if true depth smaller, is inside
 			num--; //remove this point from the list of visible
+
+		//Mirar si la distancia (en lineal) entre el punt i el test es gran, no tenir en compte l'oclusió
 	}
 
 	//finally, compute the AO factor as the ratio of visible points
