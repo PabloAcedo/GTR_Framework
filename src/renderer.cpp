@@ -607,7 +607,9 @@ void GTR::Renderer::multipassDeferred(Camera* camera){
 /********************************************************************************************************************/
 void GTR::Renderer::renderInMenu(){
 	ImGui::Combo("Pipeline Mode", &current_mode_pipeline, optionsTextPipeline, IM_ARRAYSIZE(optionsTextPipeline));
-	ImGui::Combo("Render Mode", &current_mode, optionsText, IM_ARRAYSIZE(optionsText));
+	if (current_mode_pipeline != GTR::ePipelineMode::DEFERRED) {
+		ImGui::Combo("Render Mode", &current_mode, optionsText, IM_ARRAYSIZE(optionsText));
+	}
 	ImGui::Combo("Ilumination Mode", &current_mode_ilum, optionsTextIlum, IM_ARRAYSIZE(optionsTextIlum));
 	changeRenderMode();
 	ImGui::Checkbox("Update Shadows", &cast_shadows);

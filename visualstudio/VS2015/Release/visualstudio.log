@@ -26,22 +26,22 @@ D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(541,19): warning C
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(581,63): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(581,43): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(599,20): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(620,64): warning C4305: 'argument': truncation from 'double' to 'float'
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(632,64): warning C4305: 'argument': truncation from 'double' to 'float'
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(633,64): warning C4305: 'argument': truncation from 'double' to 'float'
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(634,66): warning C4305: 'argument': truncation from 'double' to 'float'
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(672,15): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(673,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(674,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(690,21): warning C4305: '=': truncation from 'double' to 'float'
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(733,63): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(733,43): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(622,64): warning C4305: 'argument': truncation from 'double' to 'float'
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(634,64): warning C4305: 'argument': truncation from 'double' to 'float'
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(635,64): warning C4305: 'argument': truncation from 'double' to 'float'
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(636,66): warning C4305: 'argument': truncation from 'double' to 'float'
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(674,15): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(675,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(676,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(692,21): warning C4305: '=': truncation from 'double' to 'float'
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(735,63): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(735,43): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
      Creating library ..\..\framework.lib and object ..\..\framework.exp
 LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
   Generating code
-  44 of 4294 functions ( 1.0%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    67 functions had inline decision re-evaluated but remain unchanged
+  Previous IPDB and IOBJ mismatch, fall back to full compilation.
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\scene.cpp(159): warning C4715: 'GTR::Scene::createEntity': not all control paths return a value
+  All 4294 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   Finished generating code
 LINK : warning LNK4286: symbol '___glewDeleteBuffers' defined in 'glew32s.lib(glew.obj)' is imported by 'imgui_impl_opengl3.obj'
 LINK : warning LNK4286: symbol '___glewLinkProgram' defined in 'glew32s.lib(glew.obj)' is imported by 'imgui_impl_opengl3.obj'
