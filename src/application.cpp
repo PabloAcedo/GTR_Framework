@@ -241,27 +241,15 @@ void Application::renderDebugGUI(void)
 
 	//System stats
 	ImGui::Text(getGPUStats().c_str());					   // Display some text (you can use a format strings too)
-
-	ImGui::Combo("Pipeline Mode", &renderer->current_mode_pipeline, renderer->optionsTextPipeline, IM_ARRAYSIZE(renderer->optionsTextPipeline));
-
-	if (renderer->current_mode_pipeline == GTR::ePipelineMode::DEFERRED) {
-		ImGui::Checkbox("Show gbuffers", &renderer->showGbuffers);
-		ImGui::Checkbox("Show SSAO map", &renderer->showSSAO);
-	}
-		
-
 	ImGui::Checkbox("Wireframe", &render_wireframe);
 	ImGui::ColorEdit3("BG color", scene->background_color.v);
 	ImGui::ColorEdit3("Ambient Light", scene->ambient_light.v);
-	ImGui::Checkbox("Shadows", &renderer->cast_shadows);
 
-	ImGui::Combo("Render Mode", &renderer->current_mode, renderer->optionsText, IM_ARRAYSIZE(renderer->optionsText));
-	ImGui::Combo("Ilumination Mode", &renderer->current_mode_ilum, renderer->optionsTextIlum, IM_ARRAYSIZE(renderer->optionsTextIlum));
-	renderer->changeRenderMode();
-
-	ImGui::SliderFloat("bias_ao", &renderer->ssao.bias_slider, 0.001, 0.6);
-	ImGui::SliderFloat("radius_ao", &renderer->ssao.radius_slider, 1.0, 30.0);
-
+	if(ImGui::TreeNode(renderer, "Renderer")) {
+		renderer->renderInMenu();
+		ImGui::TreePop();
+	}
+	
 	//add info to the debug panel about the camera
 	if (ImGui::TreeNode(camera, "Camera")) {
 		camera->renderInMenu();

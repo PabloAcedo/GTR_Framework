@@ -33,16 +33,21 @@ bool sortByDistance(RenderCall* i, RenderCall* j) {
 
 Renderer::Renderer() {
 	current_mode =  1;
-	current_mode_pipeline = current_mode_ilum = 0;
+	current_mode_pipeline = current_mode_ilum = 1;
 	renderingShadows = false;
 	render_mode = GTR::eRenderMode::LIGHT_MULTI;
-	pipeline_mode = GTR::ePipelineMode::FORWARD;
+	pipeline_mode = GTR::ePipelineMode::DEFERRED;
 	showGbuffers = false;
 	cast_shadows = true;
-	ilum_mode = GTR::eIlumMode::PHONG;
+	ilum_mode = GTR::eIlumMode::PBR;
 	ao_map = NULL;
 	showSSAO = false;
-	bias_slider = 0.5;
+	avg_lum = 0.78;
+	lum_white = 1.0;
+	gamma = 2.2;
+	scale_tonemap = 1.0;
+	apply_tonemap = true;
+	apply_ssao = true;
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
@@ -67,6 +72,7 @@ void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
 
 	//sort the rendercalls
 	std::sort(renderCalls.begin(), renderCalls.end(), sortByDistance);
+	std::sort(renderCalls_Blending.begin(), renderCalls_Blending.end(), sortByDistance);
 }
 
 void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
@@ -74,22 +80,29 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 	collectRenderCalls(scene, camera);
 
 	if (pipeline_mode == FORWARD || renderingShadows) {
+		if (!renderingShadows) {
+			updateFBO(scene_fbo, 1);
+			scene_fbo.bind();
+		}
 		//set the clear color (the background color)
 		glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
 		// Clear the color and the depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		checkGLErrors();
-
 		renderForward(scene, renderCalls, camera);
 		if (!renderingShadows) {
-			std::sort(renderCalls_Blending.begin(), renderCalls_Blending.end(), sortByDistance);
 			renderForward(scene, renderCalls_Blending, camera);
 		}
+		if (!renderingShadows) {
+			scene_fbo.unbind();
+			renderFinal();
+		}
+		
 	}
-	else if (pipeline_mode == DEFERRED) {
+	else if (pipeline_mode == DEFERRED) { 
+		//renderCalls.insert(renderCalls.end(), renderCalls_Blending.begin(), renderCalls_Blending.end());
 		renderDeferred(scene, renderCalls, camera);
 	}
-		
 }
 
 void Renderer::renderForward(Scene* scene, std::vector<RenderCall*>& rc, Camera* camera) {
@@ -98,6 +111,7 @@ void Renderer::renderForward(Scene* scene, std::vector<RenderCall*>& rc, Camera*
 		renderMeshWithMaterial(render_mode,rc[i]->model, rc[i]->mesh, rc[i]->material, camera);
 	}
 	glDisable(GL_BLEND);
+	glDepthFunc(GL_LESS);
 }
 
 
@@ -313,12 +327,14 @@ void Renderer::multipassRendering(Shader*& shader, const Matrix44 model, GTR::Ma
 		else {
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+			glDepthFunc(GL_LEQUAL);
 		}
 		if (i == 0 && material->alpha_mode == GTR::eAlphaMode::BLEND) {
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		}
 		multipassUniforms(Scene::instance->lights[i], shader, model, material, camera, mesh, i);
 	}
+	glDisable(GL_BLEND);
 }
 
 void Renderer::singlepassUniforms(Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh) {
@@ -432,25 +448,23 @@ void Renderer::changePipelineMode() {
 void Renderer::changeIlumMode() {
 	if (current_mode_ilum == 0) {
 		ilum_mode = GTR::eIlumMode::PHONG;
+		Scene::instance->phong = true;
 	}
 	else if (current_mode_ilum == 1) {
 		ilum_mode = GTR::eIlumMode::PBR;
+		Scene::instance->phong = false;
 	}
 
 }
 
-/****************************************************************************************/
+/********************************************************************************************************************/
 //deferred
 void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera* camera) {
 
 	glDisable(GL_BLEND);
+
+	updateFBO(fbo_gbuffers, 4);
 	int w = fbo_gbuffers.width; int h = fbo_gbuffers.height;
-	if (fbo_gbuffers.fbo_id == 0 || (w != Application::instance->window_width) || (h != Application::instance->window_height)) {//Initialize fbo
-		fbo_gbuffers.create(Application::instance->window_width,
-			Application::instance->window_height,
-			4, GL_RGBA, GL_UNSIGNED_BYTE);
-	}
-	w = fbo_gbuffers.width; h = fbo_gbuffers.height;
 
 	//render gbuffers
 	fbo_gbuffers.bind();
@@ -465,7 +479,6 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	fbo_gbuffers.unbind();
 
-
 	//ssao+
 	if (ao_map == NULL || ao_map->width != w || ao_map->height != h) {
 		ao_map = new Texture(w, h, GL_RGB, GL_UNSIGNED_BYTE);
@@ -479,8 +492,13 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	fbo_gbuffers.depth_texture->unbind();
 
-	ssao.compute(fbo_gbuffers.depth_texture, fbo_gbuffers.color_textures[1], camera, ao_map);
+	if(apply_ssao)
+		ssao.compute(fbo_gbuffers.depth_texture, fbo_gbuffers.color_textures[1], camera, ao_map);
 
+
+	updateFBO(scene_fbo, 1);
+
+	scene_fbo.bind();
 	//Render deferred
 	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -493,6 +511,9 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
+	scene_fbo.unbind();
+
+	renderFinal();
 
 	if(showGbuffers)
 		showgbuffers(camera);
@@ -544,7 +565,8 @@ void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera
 	shader->setUniform("u_emissive", fbo_gbuffers.color_textures[3], 4);
 	shader->setUniform("u_ilum_mode", ilum_mode);
 	shader->setUniform("u_has_omr", true);
-	shader->setUniform("u_ssao", ao_map, 5);
+	shader->setUniform("u_ssao", ao_map, 5);//apply_ssao
+	shader->setUniform("u_apply_ssao", apply_ssao);
 
 	Matrix44 vp_inv = camera->viewprojection_matrix;
 	vp_inv.inverse();
@@ -582,26 +604,62 @@ void GTR::Renderer::multipassDeferred(Camera* camera){
 	}
 }
 
+/********************************************************************************************************************/
+void GTR::Renderer::renderInMenu(){
+	ImGui::Combo("Pipeline Mode", &current_mode_pipeline, optionsTextPipeline, IM_ARRAYSIZE(optionsTextPipeline));
+	ImGui::Combo("Render Mode", &current_mode, optionsText, IM_ARRAYSIZE(optionsText));
+	ImGui::Combo("Ilumination Mode", &current_mode_ilum, optionsTextIlum, IM_ARRAYSIZE(optionsTextIlum));
+	changeRenderMode();
+	ImGui::Checkbox("Update Shadows", &cast_shadows);
 
-Texture* GTR::CubemapFromHDRE(const char* filename)
-{
-	HDRE* hdre = new HDRE();
-	if (!hdre->load(filename))
-	{
-		delete hdre;
-		return NULL;
+	if (current_mode_pipeline == GTR::ePipelineMode::DEFERRED) {
+		ImGui::Checkbox("Show gbuffers", &showGbuffers);
+		if(ImGui::TreeNode("SSAO")) {
+			ImGui::Checkbox("Apply SSAO", &apply_ssao);
+			if (apply_ssao) {
+				ImGui::SliderFloat("bias_ao", &ssao.bias_slider, 0.001, 0.6);
+				ImGui::SliderFloat("radius_ao", &ssao.radius_slider, 1.0, 30.0);
+				ImGui::Checkbox("Show SSAO map", &showSSAO);
+			}
+			else {
+				showSSAO = false;
+			}
+		}
 	}
-
-	/*
-	Texture* texture = new Texture();
-	texture->createCubemap(hdre->width, hdre->height, (Uint8**)hdre->getFaces(0), hdre->header.numChannels == 3 ? GL_RGB : GL_RGBA, GL_FLOAT );
-	for(int i = 1; i < 6; ++i)
-		texture->uploadCubemap(texture->format, texture->type, false, (Uint8**)hdre->getFaces(i), GL_RGBA32F, i);
-	return texture;
-	*/
-	return NULL;
+	if (ImGui::TreeNode("Tonemapper")) {
+		ImGui::Checkbox("Apply tonemap", &apply_tonemap);
+		if (apply_tonemap) {
+			ImGui::SliderFloat("Average luminance", &avg_lum, 0.001, 1.0);
+			ImGui::SliderFloat("White luminance", &lum_white, 0.001, 1.0);
+			ImGui::SliderFloat("Scale tonemap", &scale_tonemap, 0.001, 1.0);
+		}
+		
+	}
 }
 
+void GTR::Renderer::updateFBO(FBO& fbo, int textures_num){
+	int w = fbo.width; int h = fbo.height;
+	if (fbo.fbo_id == 0 || (w != Application::instance->window_width) || (h != Application::instance->window_height)) {//Initialize fbo
+		fbo.~FBO();
+		fbo.create(Application::instance->window_width,
+			Application::instance->window_height,
+			textures_num, GL_RGBA, GL_UNSIGNED_BYTE);
+	}
+}
+
+void GTR::Renderer::renderFinal(){
+	Shader* shader = Shader::Get("tonemapper");
+	shader->enable();
+	shader->setUniform("u_average_lum", avg_lum);
+	shader->setUniform("u_lumwhite2", lum_white * lum_white);
+	shader->setUniform("u_igamma", 1 / gamma);
+	shader->setUniform("u_scale", scale_tonemap); 
+	shader->setUniform("u_apply", apply_tonemap);
+	scene_fbo.color_textures[0]->toViewport(shader);
+	shader->disable();
+}
+
+/********************************************************************************************************************/
 std::vector<Vector3> generateSpherePoints(int num, float radius, bool hemi)
 {
 	std::vector<Vector3> points;
@@ -680,5 +738,23 @@ void GTR::SSAOFX::compute(Texture* depth_buffer, Texture* normal_buffer, Camera*
 	ao_fbo.unbind();
 }
 
+/********************************************************************************************************************/
+Texture* GTR::CubemapFromHDRE(const char* filename)
+{
+	HDRE* hdre = new HDRE();
+	if (!hdre->load(filename))
+	{
+		delete hdre;
+		return NULL;
+	}
 
+	/*
+	Texture* texture = new Texture();
+	texture->createCubemap(hdre->width, hdre->height, (Uint8**)hdre->getFaces(0), hdre->header.numChannels == 3 ? GL_RGB : GL_RGBA, GL_FLOAT );
+	for(int i = 1; i < 6; ++i)
+		texture->uploadCubemap(texture->format, texture->type, false, (Uint8**)hdre->getFaces(i), GL_RGBA32F, i);
+	return texture;
+	*/
+	return NULL;
+}
 

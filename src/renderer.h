@@ -58,37 +58,44 @@ namespace GTR {
 
 	public:
 
-		
+		//modes
 		eRenderMode render_mode;
 		ePipelineMode pipeline_mode;
 		eIlumMode ilum_mode;
-
-		std::vector<RenderCall*> renderCalls;
-		std::vector<RenderCall*> renderCalls_Blending;
-
-		FBO fbo_gbuffers;
-
-		SSAOFX ssao;
-		Texture* ao_map;
-
 		int current_mode;
 		int current_mode_pipeline;
 		int current_mode_ilum;
 
-		float bias_slider;
-
 		const char* optionsText[3] = { {"Texture"},{"Multipass"},{"SinglePass"} };
 
-		const char* optionsTextPipeline[2] = {{"Forward"},{"Deferred"}};
+		const char* optionsTextPipeline[2] = { {"Forward"},{"Deferred"} };
 
 		const char* optionsTextIlum[2] = { {"Phong"},{"PBR"} };
 
+		//rendercalls
+		std::vector<RenderCall*> renderCalls;
+		std::vector<RenderCall*> renderCalls_Blending;
+
+		//deferred
+		FBO fbo_gbuffers;
+		FBO scene_fbo;
+
+		//ssao
+		SSAOFX ssao;
+		Texture* ao_map;
+		bool apply_ssao;
+
+		//tonemap
+		float avg_lum;
+		float lum_white;
+		float gamma;
+		float scale_tonemap;
+		bool apply_tonemap;
+
+		//bools
 		bool renderingShadows;
-
 		bool cast_shadows;
-
 		bool showGbuffers;
-
 		bool showSSAO;
 
 		Renderer();
@@ -140,6 +147,11 @@ namespace GTR {
 
 		void multipassDeferred(Camera* camera);
 
+
+		/**********************************************************************************************/
+		void renderInMenu();
+		void updateFBO(FBO& fbo, int textures_num);
+		void renderFinal();
 	};
 
 	Texture* CubemapFromHDRE(const char* filename);
