@@ -3,12 +3,21 @@ flat basic.vs flat.fs
 texture basic.vs texture.fs
 depth quad.vs depth.fs
 multi basic.vs multi.fs
+//forward
 multi_pass basic.vs multi_pass.fs
 single_pass basic.vs single_pass.fs 
+//deferred
 g_buffers basic.vs g_buffers.fs
 deferred_multi_pass quad.vs deferred_multi_pass.fs
+deferred_geometry basic.vs deferred_multi_pass.fs
+
+deferred_ambient quad.vs deferred_ambient.fs
+
+//FX
 ssao quad.vs ssao.fs
 tonemapper quad.vs tonemapper.fs
+
+
 
 \basic.vs
 
@@ -414,12 +423,22 @@ uniform bool u_has_shadows;
 
 uniform int u_ilum_mode;
 
+uniform sampler2D u_depth_texture;
+uniform vec2 u_iRes;
+uniform bool u_deferred;
+
 out vec4 FragColor;
 
 void main()
 {
 	vec4 color = u_color;
-
+	if(u_deferred){
+		vec2 uv = gl_FragCoord.xy * u_iRes.xy;
+		float depth = texture( u_depth_texture, uv ).x;
+		//compare with the depth of the gbuffers
+		if (depth < gl_FragCoord.z)
+			discard;
+	}
 	sMaterial material = init_material(v_uv);
 
 	color *= material.albedo;
@@ -852,9 +871,6 @@ void main()
 
 	sMaterial material = init_material(uv);
 
-	if(u_apply_ssao)
-		material.ao = texture( u_ssao, uv ).x;
-
 	vec4 color = material.albedo;
 
 	//From [0 1]to [-1 1], and inverse to get world position
@@ -869,11 +885,6 @@ void main()
 	
 	vec3 total_light = vec3(0.0);
 
-	if(u_iteration == 0){
-		total_light += gamma_to_linear(u_light_ambient);
-		total_light *= material.ao;
-	}
-
 	if(u_ilum_mode == 0){
 
 		total_light += computePhong(N,world_pos);
@@ -886,9 +897,6 @@ void main()
 
 	color.xyz *= total_light;
 
-	if(u_iteration == 0){
-		color.xyz += material.emission;
-	}
 	//color.xyz = linear_to_gamma(color.xyz); //we will apply this in the tonemapper
 	
 
@@ -999,7 +1007,6 @@ in vec2 v_uv;
 uniform sampler2D u_texture;
 uniform float u_average_lum;
 uniform float u_lumwhite2;
-uniform float u_igamma;
 uniform float u_scale;
 uniform bool u_apply;
 
@@ -1022,4 +1029,44 @@ void main() {
 	gl_FragColor = vec4( rgb, color.a );
 }
 
+\deferred_ambient.fs
 
+#version 330 core
+
+in vec2 v_uv;
+
+uniform vec3 u_light_ambient;
+#include "color_correction"
+#include "material"
+uniform vec2 u_iRes;
+
+uniform sampler2D u_ssao;
+uniform bool u_apply_ssao;
+
+out vec4 FragColor;
+
+void main()
+{
+	//extract uvs from pixel screenpos. From  [-1 1]to [0 1]
+	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
+
+	sMaterial material = init_material(uv);
+
+	if(u_apply_ssao)
+		material.ao = texture( u_ssao, uv ).x;
+
+	vec4 color = material.albedo;
+	
+	vec3 total_light = vec3(0.0);
+
+	total_light += gamma_to_linear(u_light_ambient);
+	total_light *= material.ao;
+
+	color.xyz *= total_light;
+
+	color.xyz += material.emission;
+	//color.xyz = linear_to_gamma(color.xyz); //we will apply this in the tonemapper
+	
+
+	FragColor = color;
+}

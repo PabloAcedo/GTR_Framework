@@ -48,6 +48,7 @@ Renderer::Renderer() {
 	scale_tonemap = 1.0;
 	apply_tonemap = true;
 	apply_ssao = true;
+	blend_deferred = false;
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
@@ -309,7 +310,16 @@ void Renderer::multipassUniforms(GTR::LightEntity* light, Shader*& shader, const
 
 	if (Scene::instance != NULL)
 		shader->setUniform("u_light_ambient", Scene::instance->ambient_light);
-
+	bool deferred_pos = false;
+	if (blend_deferred) {
+		shader->setUniform("u_depth_texture", fbo_gbuffers.depth_texture, 4);
+		//pass the inverse window resolution, this may be useful
+		int width = Application::instance->window_width;
+		int height = Application::instance->window_height;
+		shader->setUniform("u_iRes", Vector2(1.0 / (float)width, 1.0 / (float)height));
+		deferred_pos = true;
+	}
+	shader->setUniform("u_deferred", deferred_pos);
 	//do the draw call that renders the mesh into the screen
 	mesh->render(GL_TRIANGLES);
 }
@@ -470,6 +480,7 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	fbo_gbuffers.bind();
 
 	glClearColor(0, 0, 0, 0);
+	//glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	checkGLErrors();
 
@@ -495,8 +506,9 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	if(apply_ssao)
 		ssao.compute(fbo_gbuffers.depth_texture, fbo_gbuffers.color_textures[1], camera, ao_map);
 
-
 	updateFBO(scene_fbo, 1);
+
+	fbo_gbuffers.depth_texture->copyTo(scene_fbo.depth_texture);
 
 	scene_fbo.bind();
 	//Render deferred
@@ -512,22 +524,11 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
 
-	scene_fbo.unbind();
-
-	//No es pot copiar mentre esta active crec
-	fbo_gbuffers.depth_texture->copyTo(scene_fbo.depth_texture);
-
-	scene_fbo.bind();
-	glEnable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL); //
-
-	for (int i = 0; i < this->renderCalls_Blending.size(); i++) {
- 		renderMeshWithMaterial(GTR::eRenderMode::LIGHT_MULTI, this->renderCalls_Blending[i]->model, this->renderCalls_Blending[i]->mesh, this->renderCalls_Blending[i]->material, camera);
-	}
-
-	glDisable(GL_BLEND);
+	//forward pass for blending objects
+	blend_deferred = true;
 	glDisable(GL_DEPTH_TEST);
+	renderForward(scene, renderCalls_Blending, camera);
+	blend_deferred = false;
 
 	scene_fbo.unbind();
 
@@ -567,12 +568,21 @@ void GTR::Renderer::showgbuffers(Camera* camera) {
 }
 
 void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera, int iteration) {
+	Mesh* mesh = NULL;
+	Shader* shader = NULL;
 
-	Shader* shader = Shader::Get("deferred_multi_pass");
-	if (shader == NULL) return;
-
-	Mesh* quad = Mesh::getQuad();
+	if (light->light_type == DIRECTIONAL) {
+		shader = Shader::Get("deferred_multi_pass");
+		mesh = Mesh::getQuad();
+	}
+	else {
+		shader = Shader::Get("deferred_geometry");
+		mesh = Mesh::Get("data/meshes/sphere.obj", false);
+	}
+	
 	light->lightVisible();
+
+	if (shader == NULL) return;
 
 	shader->enable();
 	//pass the gbuffers to the shader
@@ -599,27 +609,54 @@ void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera
 	shader->setUniform("u_iRes", Vector2(1.0 / (float)width, 1.0 / (float)height));
 
 	light->uploadUniforms(shader);
-	shader->setUniform("u_iteration", iteration);
-	if (Scene::instance != NULL)
-		shader->setUniform("u_light_ambient", Scene::instance->ambient_light);
 
-	//disable depth test and blend!!
-	//glDisable(GL_DEPTH_TEST);
-	//glDisable(GL_BLEND);
+	Matrix44 m;
+	Vector3 pos = light->model.getTranslation();
+	m.setTranslation(pos.x, pos.y, pos.z);
+	m.scale(light->max_dist, light->max_dist, light->max_dist);
+	shader->setUniform("u_model", m);
+	shader->setUniform("u_viewprojection", camera->viewprojection_matrix);
+	if(light->light_type != DIRECTIONAL) glFrontFace(GL_CW);
 
 	//render a fullscreen quad
-	quad->render(GL_TRIANGLES);
+	mesh->render(GL_TRIANGLES);
 
 	shader->disable();
+
+	glFrontFace(GL_CCW);
 }
 
-void GTR::Renderer::multipassDeferred(Camera* camera){
+void GTR::Renderer::multipassDeferred(Camera* camera) {
+	renderAmbient();
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
+
 	for (int i = 0; i < Scene::instance->lights.size(); i++) {
 		LightEntity* light = Scene::instance->lights[i];
-		multipassUniformsDeferred(light, camera, i);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE, GL_ONE);
+		multipassUniformsDeferred(light, camera, i);		
 	}
+}
+
+void GTR::Renderer::renderAmbient(){
+	Shader* shader = Shader::Get("deferred_ambient");
+	if (shader == NULL) return;
+	Mesh* quad = Mesh::getQuad();
+	shader->enable();
+	shader->setUniform("u_albedo", fbo_gbuffers.color_textures[0], 0);
+	shader->setUniform("u_normal_texture", fbo_gbuffers.color_textures[1], 1);
+	shader->setUniform("u_omr", fbo_gbuffers.color_textures[2], 2);
+	shader->setUniform("u_depth_texture", fbo_gbuffers.depth_texture, 3);
+	shader->setUniform("u_emissive", fbo_gbuffers.color_textures[3], 4);
+	shader->setUniform("u_has_omr", true);
+	shader->setUniform("u_ssao", ao_map, 5);//apply_ssao
+	shader->setUniform("u_apply_ssao", apply_ssao);
+	//pass the inverse window resolution, this may be useful
+	int width = Application::instance->window_width;
+	int height = Application::instance->window_height;
+	shader->setUniform("u_iRes", Vector2(1.0 / (float)width, 1.0 / (float)height));
+	shader->setUniform("u_light_ambient", Scene::instance->ambient_light);
+	quad->render(GL_TRIANGLES);
+	shader->disable();
 }
 
 /********************************************************************************************************************/
@@ -649,9 +686,9 @@ void GTR::Renderer::renderInMenu(){
 	if (ImGui::TreeNode("Tonemapper")) {
 		ImGui::Checkbox("Apply tonemap", &apply_tonemap);
 		if (apply_tonemap) {
-			ImGui::SliderFloat("Average luminance", &avg_lum, 0.001, 1.0);
-			ImGui::SliderFloat("White luminance", &lum_white, 0.001, 1.0);
-			ImGui::SliderFloat("Scale tonemap", &scale_tonemap, 0.001, 1.0);
+			ImGui::SliderFloat("Average luminance", &avg_lum, 0.5, 4.0);
+			ImGui::SliderFloat("White luminance", &lum_white, 0.5, 1.0);
+			ImGui::SliderFloat("Scale tonemap", &scale_tonemap, 0.001, 5.0);
 		}
 		
 	}
@@ -663,7 +700,7 @@ void GTR::Renderer::updateFBO(FBO& fbo, int textures_num){
 		fbo.~FBO();
 		fbo.create(Application::instance->window_width,
 			Application::instance->window_height,
-			textures_num, GL_RGBA, GL_UNSIGNED_BYTE);
+			textures_num, GL_RGBA, GL_UNSIGNED_BYTE, true);
 	}
 }
 
@@ -672,7 +709,6 @@ void GTR::Renderer::renderFinal(){
 	shader->enable();
 	shader->setUniform("u_average_lum", avg_lum);
 	shader->setUniform("u_lumwhite2", lum_white * lum_white);
-	shader->setUniform("u_igamma", 1 / gamma);
 	shader->setUniform("u_scale", scale_tonemap); 
 	shader->setUniform("u_apply", apply_tonemap);
 	scene_fbo.color_textures[0]->toViewport(shader);

@@ -97,6 +97,7 @@ namespace GTR {
 		bool cast_shadows;
 		bool showGbuffers;
 		bool showSSAO;
+		bool blend_deferred;
 
 		Renderer();
 
@@ -147,6 +148,7 @@ namespace GTR {
 
 		void multipassDeferred(Camera* camera);
 
+		void renderAmbient();
 
 		/**********************************************************************************************/
 		void renderInMenu();
