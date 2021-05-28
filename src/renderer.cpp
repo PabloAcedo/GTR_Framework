@@ -511,6 +511,24 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
+
+	scene_fbo.unbind();
+
+	//No es pot copiar mentre esta active crec
+	fbo_gbuffers.depth_texture->copyTo(scene_fbo.depth_texture);
+
+	scene_fbo.bind();
+	glEnable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL); //
+
+	for (int i = 0; i < this->renderCalls_Blending.size(); i++) {
+ 		renderMeshWithMaterial(GTR::eRenderMode::LIGHT_MULTI, this->renderCalls_Blending[i]->model, this->renderCalls_Blending[i]->mesh, this->renderCalls_Blending[i]->material, camera);
+	}
+
+	glDisable(GL_BLEND);
+	glDisable(GL_DEPTH_TEST);
+
 	scene_fbo.unbind();
 
 	renderFinal();
