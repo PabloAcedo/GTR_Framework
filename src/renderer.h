@@ -37,6 +37,7 @@ namespace GTR {
 		FBO ao_fbo;
 		float bias_slider;
 		float radius_slider;
+		float max_distance_slider;
 		SSAOFX();
 		void compute(Texture* depth_buffer, Texture* normal_buffer, Camera* camera, Texture* output);
 	};

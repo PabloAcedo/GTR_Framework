@@ -921,6 +921,7 @@ uniform vec3 u_camera_position;
 uniform int u_ilum_mode;
 
 uniform float u_bias_slider;
+uniform float u_max_distance;
 
 uniform float u_radius;
 
@@ -986,7 +987,7 @@ void main()
 		float pdepth = texture( u_depth_texture, proj.xy ).x;
 
 		//compare true depth with its depth
-		if( pdepth < proj.z ) //if true depth smaller, is inside
+		if( pdepth < proj.z && (abs(pdepth - proj.z) < u_max_distance*0.01)) //if true depth smaller, is inside
 			num--; //remove this point from the list of visible
 
 		//Mirar si la distancia (en lineal) entre el punt i el test es gran, no tenir en compte l'oclusi�

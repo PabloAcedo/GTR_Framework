@@ -571,6 +571,8 @@ void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera
 	Mesh* mesh = NULL;
 	Shader* shader = NULL;
 
+	if (!light->visible) return;
+
 	if (light->light_type == DIRECTIONAL) {
 		shader = Shader::Get("deferred_multi_pass");
 		mesh = Mesh::getQuad();
@@ -580,8 +582,6 @@ void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera
 		mesh = Mesh::Get("data/meshes/sphere.obj", false);
 	}
 	
-	light->lightVisible();
-
 	if (shader == NULL) return;
 
 	shader->enable();
@@ -618,7 +618,7 @@ void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera
 	shader->setUniform("u_viewprojection", camera->viewprojection_matrix);
 	if(light->light_type != DIRECTIONAL) glFrontFace(GL_CW);
 
-	//render a fullscreen quad
+	//render a fullscreen quad or sphere
 	mesh->render(GL_TRIANGLES);
 
 	shader->disable();
@@ -676,6 +676,7 @@ void GTR::Renderer::renderInMenu(){
 			if (apply_ssao) {
 				ImGui::SliderFloat("bias_ao", &ssao.bias_slider, 0.001, 0.6);
 				ImGui::SliderFloat("radius_ao", &ssao.radius_slider, 1.0, 30.0);
+				ImGui::SliderFloat("distance_ao", &ssao.max_distance_slider, 0.01, 1.0);
 				ImGui::Checkbox("Show SSAO map", &showSSAO);
 			}
 			else {
@@ -745,6 +746,7 @@ GTR::SSAOFX::SSAOFX(){
 	points = generateSpherePoints(64, 1.0, true);
 	bias_slider = 0.015;
 	radius_slider = 10.0f;
+	max_distance_slider = 0.13f;
 }
 
 void GTR::SSAOFX::compute(Texture* depth_buffer, Texture* normal_buffer, Camera* camera, Texture* output){
@@ -782,6 +784,7 @@ void GTR::SSAOFX::compute(Texture* depth_buffer, Texture* normal_buffer, Camera*
 
 	shader->setUniform("u_bias_slider", bias_slider);
 	shader->setUniform("u_radius", radius_slider);
+	shader->setUniform("u_max_distance", max_distance_slider);
 
 	//pass the inverse window resolution, this may be useful
 	int width = Application::instance->window_width;

@@ -69,6 +69,20 @@ Application::Application(int window_width, int window_height, SDL_Window* window
 	if (!scene->load("data/scene.json"))
 		exit(1);
 
+	for (int i = 0; i < 21; i++) {
+		GTR::LightEntity* light = new GTR::LightEntity();
+		light->name = "Point Light " + std::to_string(i);
+		light->model.translate((random() * 1500)-750, abs(random()) * 10, (random() * 1500)-750);
+		light->light_type = GTR::eLightType::POINT;
+
+		light->intensity = 0.25;
+		light->max_dist = 200;
+		light->visible = true;
+		light->color = Vector3(abs(random()) * 255, abs(random()) * 255, abs(random()) * 255);
+
+		scene->lights.push_back(light);
+	}	
+
 	camera->lookAt(scene->main_camera.eye, scene->main_camera.center, Vector3(0, 1, 0));
 	camera->fov = scene->main_camera.fov;
 
