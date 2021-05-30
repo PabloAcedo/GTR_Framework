@@ -568,10 +568,10 @@ void GTR::Renderer::showgbuffers(Camera* camera) {
 }
 
 void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera, int iteration) {
+	if (!light->visible) return;
+
 	Mesh* mesh = NULL;
 	Shader* shader = NULL;
-
-	if (!light->visible) return;
 
 	if (light->light_type == DIRECTIONAL) {
 		shader = Shader::Get("deferred_multi_pass");

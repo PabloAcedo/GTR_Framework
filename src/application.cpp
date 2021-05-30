@@ -72,7 +72,7 @@ Application::Application(int window_width, int window_height, SDL_Window* window
 	for (int i = 0; i < 21; i++) {
 		GTR::LightEntity* light = new GTR::LightEntity();
 		light->name = "Point Light " + std::to_string(i);
-		light->model.translate((random() * 1500)-750, abs(random()) * 10, (random() * 1500)-750);
+		light->model.translate((random() * 1500)-750, 100, (random() * 1500)-750);
 		light->light_type = GTR::eLightType::POINT;
 
 		light->intensity = 0.25;
