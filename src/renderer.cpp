@@ -48,7 +48,6 @@ Renderer::Renderer() {
 	scale_tonemap = 1.0;
 	apply_tonemap = true;
 	apply_ssao = true;
-	blend_deferred = false;
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
@@ -310,16 +309,7 @@ void Renderer::multipassUniforms(GTR::LightEntity* light, Shader*& shader, const
 
 	if (Scene::instance != NULL)
 		shader->setUniform("u_light_ambient", Scene::instance->ambient_light);
-	bool deferred_pos = false;
-	if (blend_deferred) {
-		shader->setUniform("u_depth_texture", fbo_gbuffers.depth_texture, 4);
-		//pass the inverse window resolution, this may be useful
-		int width = Application::instance->window_width;
-		int height = Application::instance->window_height;
-		shader->setUniform("u_iRes", Vector2(1.0 / (float)width, 1.0 / (float)height));
-		deferred_pos = true;
-	}
-	shader->setUniform("u_deferred", deferred_pos);
+
 	//do the draw call that renders the mesh into the screen
 	mesh->render(GL_TRIANGLES);
 }
@@ -513,7 +503,11 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	scene_fbo.bind();
 	//Render deferred
 	glClearColor(0, 0, 0, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	fbo_gbuffers.depth_texture->copyTo(NULL);
+
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);
 	checkGLErrors();
 
 	glDisable(GL_BLEND);
@@ -525,12 +519,15 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	glDisable(GL_DEPTH_TEST);
 
 	//forward pass for blending objects
-	blend_deferred = true;
-	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+
 	renderForward(scene, renderCalls_Blending, camera);
-	blend_deferred = false;
 
 	scene_fbo.unbind();
+
+	glDisable(GL_BLEND);
+	glDisable(GL_DEPTH_TEST);
 
 	renderFinal();
 
@@ -540,7 +537,7 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	if (showSSAO) {
 		ao_map->toViewport();
 	}
-	
+		
 }
 
 void GTR::Renderer::showgbuffers(Camera* camera) {

@@ -98,7 +98,6 @@ namespace GTR {
 		bool cast_shadows;
 		bool showGbuffers;
 		bool showSSAO;
-		bool blend_deferred;
 
 		Renderer();
 

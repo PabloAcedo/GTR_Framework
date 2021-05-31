@@ -423,22 +423,12 @@ uniform bool u_has_shadows;
 
 uniform int u_ilum_mode;
 
-uniform sampler2D u_depth_texture;
-uniform vec2 u_iRes;
-uniform bool u_deferred;
-
 out vec4 FragColor;
 
 void main()
 {
 	vec4 color = u_color;
-	if(u_deferred){
-		vec2 uv = gl_FragCoord.xy * u_iRes.xy;
-		float depth = texture( u_depth_texture, uv ).x;
-		//compare with the depth of the gbuffers
-		if (depth < gl_FragCoord.z)
-			discard;
-	}
+
 	sMaterial material = init_material(v_uv);
 
 	color *= material.albedo;

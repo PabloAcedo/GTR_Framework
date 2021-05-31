@@ -81,7 +81,7 @@ Application::Application(int window_width, int window_height, SDL_Window* window
 		light->color = Vector3(abs(random()) * 255, abs(random()) * 255, abs(random()) * 255);
 
 		scene->lights.push_back(light);
-	}	
+	}
 
 	camera->lookAt(scene->main_camera.eye, scene->main_camera.center, Vector3(0, 1, 0));
 	camera->fov = scene->main_camera.fov;
