@@ -152,7 +152,7 @@ namespace GTR {
 
 		/**********************************************************************************************/
 		void renderInMenu();
-		void updateFBO(FBO& fbo, int textures_num);
+		void updateFBO(FBO& fbo, int textures_num, bool quality);
 		void renderFinal();
 	};
 

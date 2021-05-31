@@ -81,7 +81,7 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 
 	if (pipeline_mode == FORWARD || renderingShadows) {
 		if (!renderingShadows) {
-			updateFBO(scene_fbo, 1);
+			updateFBO(scene_fbo, 1,true);
 			scene_fbo.bind();
 		}
 		//set the clear color (the background color)
@@ -463,7 +463,7 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	glDisable(GL_BLEND);
 
-	updateFBO(fbo_gbuffers, 4);
+	updateFBO(fbo_gbuffers, 4, false);
 	int w = fbo_gbuffers.width; int h = fbo_gbuffers.height;
 
 	//render gbuffers
@@ -496,7 +496,7 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	if(apply_ssao)
 		ssao.compute(fbo_gbuffers.depth_texture, fbo_gbuffers.color_textures[1], camera, ao_map);
 
-	updateFBO(scene_fbo, 1);
+	updateFBO(scene_fbo, 1, true);
 
 	//fbo_gbuffers.depth_texture->copyTo(scene_fbo.depth_texture);
 
@@ -692,13 +692,21 @@ void GTR::Renderer::renderInMenu(){
 	}
 }
 
-void GTR::Renderer::updateFBO(FBO& fbo, int textures_num){
+void GTR::Renderer::updateFBO(FBO& fbo, int textures_num, bool quality){
 	int w = fbo.width; int h = fbo.height;
 	if (fbo.fbo_id == 0 || (w != Application::instance->window_width) || (h != Application::instance->window_height)) {//Initialize fbo
 		fbo.~FBO();
-		fbo.create(Application::instance->window_width,
-			Application::instance->window_height,
-			textures_num, GL_RGBA, GL_UNSIGNED_BYTE, true);
+		if (quality) {
+			fbo.create(Application::instance->window_width,
+				Application::instance->window_height,
+				textures_num, GL_RGBA, GL_FLOAT, true);
+		}
+		else {
+			fbo.create(Application::instance->window_width,
+				Application::instance->window_height,
+				textures_num, GL_RGBA, GL_UNSIGNED_BYTE, true);
+		}
+		
 	}
 }
 
