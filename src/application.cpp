@@ -75,7 +75,7 @@ Application::Application(int window_width, int window_height, SDL_Window* window
 		light->model.translate((random() * 1500)-750, 100, (random() * 1500)-750);
 		light->light_type = GTR::eLightType::POINT;
 
-		light->intensity = 0.25;
+		light->intensity = 0.15;
 		light->max_dist = 200;
 		light->visible = true;
 		light->color = Vector3(abs(random()) * 255, abs(random()) * 255, abs(random()) * 255);

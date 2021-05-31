@@ -498,7 +498,7 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	updateFBO(scene_fbo, 1);
 
-	fbo_gbuffers.depth_texture->copyTo(scene_fbo.depth_texture);
+	//fbo_gbuffers.depth_texture->copyTo(scene_fbo.depth_texture);
 
 	scene_fbo.bind();
 	//Render deferred
