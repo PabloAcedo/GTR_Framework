@@ -16,6 +16,27 @@
 
 using namespace GTR;
 
+void updateFBO(FBO& fbo, int textures_num, bool quality) {
+
+	float scale = 1.0;
+	int w = Application::instance->window_width * scale;
+	int h = Application::instance->window_height * scale;
+	if (fbo.fbo_id == 0 || (w != fbo.width) || (h != fbo.height)) {//Initialize fbo
+		fbo.~FBO();
+		if (quality) {
+			fbo.create(w,
+				h,
+				textures_num, GL_RGBA, GL_FLOAT, true);
+		}
+		else {
+			fbo.create(w,
+				h,
+				textures_num, GL_RGBA, GL_UNSIGNED_BYTE, true);
+		}
+
+	}
+}
+
 RenderCall::RenderCall(Matrix44 model, Mesh* mesh, Material* material) {
 	this->model = model;
 	this->mesh = mesh;
@@ -47,7 +68,7 @@ Renderer::Renderer() {
 	gamma = 2.2;
 	scale_tonemap = 1.0;
 	apply_tonemap = true;
-	apply_ssao = true;
+	apply_ssao = false;
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
@@ -577,6 +598,7 @@ void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera
 	else {
 		shader = Shader::Get("deferred_geometry");
 		mesh = Mesh::Get("data/meshes/sphere.obj", false);
+		glEnable(GL_CULL_FACE);
 	}
 	
 	if (shader == NULL) return;
@@ -692,24 +714,6 @@ void GTR::Renderer::renderInMenu(){
 	}
 }
 
-void GTR::Renderer::updateFBO(FBO& fbo, int textures_num, bool quality){
-	int w = fbo.width; int h = fbo.height;
-	if (fbo.fbo_id == 0 || (w != Application::instance->window_width) || (h != Application::instance->window_height)) {//Initialize fbo
-		fbo.~FBO();
-		if (quality) {
-			fbo.create(Application::instance->window_width,
-				Application::instance->window_height,
-				textures_num, GL_RGBA, GL_FLOAT, true);
-		}
-		else {
-			fbo.create(Application::instance->window_width,
-				Application::instance->window_height,
-				textures_num, GL_RGBA, GL_UNSIGNED_BYTE, true);
-		}
-		
-	}
-}
-
 void GTR::Renderer::renderFinal(){
 	Shader* shader = Shader::Get("tonemapper");
 	shader->enable();
@@ -720,6 +724,60 @@ void GTR::Renderer::renderFinal(){
 	scene_fbo.color_textures[0]->toViewport(shader);
 	shader->disable();
 }
+
+void GTR::Renderer::renderProbe(Vector3 pos, float size, float* coeffs)
+{
+	Camera* camera = Camera::current;
+	Shader* shader = Shader::Get("probe");
+	Mesh* mesh = Mesh::Get("data/meshes/sphere.obj", false);
+
+	glEnable(GL_CULL_FACE);
+	glDisable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+
+	Matrix44 model;
+	model.setTranslation(pos.x, pos.y, pos.z);
+	model.scale(size, size, size);
+
+	shader->enable();
+	shader->setUniform("u_viewprojection",
+		camera->viewprojection_matrix);
+	shader->setUniform("u_camera_position", camera->eye);
+	shader->setUniform("u_model", model);
+	shader->setUniform3Array("u_coeffs", coeffs, 9);
+
+	mesh->render(GL_TRIANGLES);
+}
+
+void GTR::Renderer::computeProbe(Scene* scene, Camera* cam, sProbe p){
+	FloatImage images[6]; //here we will store the six views
+
+	//set the fov to 90 and the aspect to 1
+	cam->setPerspective(90, 1, 0.1, 1000);
+
+	for (int i = 0; i < 6; ++i) //for every cubemap face
+	{
+		//compute camera orientation using defined vectors
+		Vector3 eye = p.pos;
+		Vector3 front = cubemapFaceNormals[i][2];
+		Vector3 center = p.pos + front;
+		Vector3 up = cubemapFaceNormals[i][1];
+		cam->lookAt(eye, center, up);
+		cam->enable();
+
+		//render the scene from this point of view
+		irr_fbo->bind();
+		renderForward(scene, renderCalls, cam);
+		irr_fbo->unbind();
+
+		//read the pixels back and store in a FloatImage
+		images[i].fromTexture(irr_fbo->color_textures[0]);
+	}
+
+	//compute the coefficients given the six images
+	p.sh = computeSH(images);
+}
+
 
 /********************************************************************************************************************/
 std::vector<Vector3> generateSpherePoints(int num, float radius, bool hemi)
@@ -756,12 +814,13 @@ GTR::SSAOFX::SSAOFX(){
 
 void GTR::SSAOFX::compute(Texture* depth_buffer, Texture* normal_buffer, Camera* camera, Texture* output){
 	//FBO* fbo = Texture::getGlobalFBO(output);
+	updateFBO(ao_fbo, 1, false);
 	int w = ao_fbo.width; int h = ao_fbo.height;
-	if (ao_fbo.fbo_id == 0 || (w != Application::instance->window_width) || (h != Application::instance->window_height)) {//Initialize fbo
+	/*if (ao_fbo.fbo_id == 0 || (w != Application::instance->window_width) || (h != Application::instance->window_height)) {//Initialize fbo
 		ao_fbo.create(Application::instance->window_width,
 			Application::instance->window_height,
 			1, GL_RGBA, GL_UNSIGNED_BYTE);
-	}
+	}*/
 	ao_fbo.setTexture(output);
 	ao_fbo.bind();
 	

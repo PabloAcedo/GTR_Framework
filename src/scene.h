@@ -94,6 +94,12 @@ namespace GTR {
 		virtual void orientCam();
 	};
 
+	class IrradianceEntity : public GTR::BaseEntity {
+	public:
+		int dimensions[3];
+		float size; //distance between probes
+	};
+
 	//contains all entities of the scene
 	class Scene
 	{

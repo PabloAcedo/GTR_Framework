@@ -1,6 +1,7 @@
 #pragma once
 #include "prefab.h"
 #include "fbo.h"
+#include "sphericalharmonics.h"
 
 //forward declarations
 class Camera;
@@ -52,6 +53,15 @@ namespace GTR {
 		RenderCall(Matrix44 model, Mesh* mesh, Material* material);
 	};
 	
+
+	//struct to store probes
+	struct sProbe {
+		Vector3 pos; //where is located
+		Vector3 local; //its ijk pos in the matrix
+		int index; //its index in the linear array
+		SphericalHarmonics sh; //coeffs
+	};
+
 	// This class is in charge of rendering anything in our system.
 	// Separating the render from anything else makes the code cleaner
 	class Renderer
@@ -93,11 +103,16 @@ namespace GTR {
 		float scale_tonemap;
 		bool apply_tonemap;
 
+		//irradiance
+		FBO* irr_fbo;
+
 		//bools
 		bool renderingShadows;
 		bool cast_shadows;
 		bool showGbuffers;
 		bool showSSAO;
+
+
 
 		Renderer();
 
@@ -152,8 +167,11 @@ namespace GTR {
 
 		/**********************************************************************************************/
 		void renderInMenu();
-		void updateFBO(FBO& fbo, int textures_num, bool quality);
 		void renderFinal();
+
+		void renderProbe(Vector3 pos, float size, float* coeffs);
+
+		void computeProbe(Scene* scene, Camera* cam, sProbe p);
 	};
 
 	Texture* CubemapFromHDRE(const char* filename);
