@@ -7,6 +7,7 @@
 
 #include "framework.h"
 #include "camera.h"
+#include "sphericalharmonics.h"
 #include <string>
 
 //forward declaration
@@ -94,10 +95,36 @@ namespace GTR {
 		virtual void orientCam();
 	};
 
-	class IrradianceEntity : public GTR::BaseEntity {
+	//struct to store probes
+	struct sProbe {
+		Vector3 pos; //where is located
+		Vector3 local; //its ijk pos in the matrix
+		int index; //its index in the linear array
+		SphericalHarmonics sh; //coeffs
+
+
+		//posar tots els bits a 0 de l'estructura: memset(&probe, 0,sizeof(probe))
+
+	};
+
+	class IrradianceEntity : public BaseEntity {
 	public:
+		Matrix44 model;
+
 		int dimensions[3];
+		Vector3 start_pos;
+		Vector3 end_pos;
+		Vector3 delta;
 		float size; //distance between probes
+
+		std::vector<sProbe> probes;
+
+		IrradianceEntity();
+		~IrradianceEntity();
+
+		void init();
+		void placeProbes();
+
 	};
 
 	//contains all entities of the scene
@@ -110,6 +137,8 @@ namespace GTR {
 		Vector3 ambient_light;
 		Camera main_camera;
 		std::vector<LightEntity*> lights;
+
+		IrradianceEntity* irradianceEnt;
 
 		bool phong;
 

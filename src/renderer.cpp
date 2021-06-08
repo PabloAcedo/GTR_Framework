@@ -570,7 +570,17 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	glDisable(GL_DEPTH_TEST);
 
 	//temporal test probes
-	renderProbe(probe.pos, 3.0, probe.sh.coeffs[0].v);
+	if (scene->irradianceEnt == NULL) {
+		scene->irradianceEnt = new IrradianceEntity();
+		scene->irradianceEnt->placeProbes();
+	}
+
+	//temporal test probes
+	for (int i = 0; i < scene->irradianceEnt->probes.size(); i++) {
+		sProbe probe2 = scene->irradianceEnt->probes[i];
+		renderProbe(probe2.pos, 3.0, probe2.sh.coeffs[0].v);
+	}
+	
 
 	scene_fbo.unbind();
 
@@ -780,6 +790,7 @@ void GTR::Renderer::renderProbe(Vector3 pos, float size, float* coeffs)
 	mesh->render(GL_TRIANGLES);
 }
 
+
 void GTR::Renderer::computeProbe(Scene* scene,  sProbe& p){
 	FloatImage images[6]; //here we will store the six views
 	Camera cam;
@@ -820,10 +831,17 @@ void GTR::Renderer::computeProbe(Scene* scene,  sProbe& p){
 	p.sh = computeSH(images,false);	//falta gamma correcte? 1.0 arbitrari
 }
 
+void GTR::Renderer::computeProbes(Scene* scene) {
+	for (int i = 0; i < scene->irradianceEnt->probes.size(); i++) {
+		computeProbe(scene, scene->irradianceEnt->probes[i]);
+	}
+
+}
+
 void GTR::Renderer::updateIrradianceCache(GTR::Scene* scene) {	//actualitza les probes
 
 	//probe.pos = Vector3(0, 1, 0); 
-	computeProbe(scene, probe);
+	computeProbes(scene);
 
 }
 

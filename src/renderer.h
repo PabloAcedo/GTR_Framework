@@ -53,19 +53,6 @@ namespace GTR {
 		RenderCall(Matrix44 model, Mesh* mesh, Material* material);
 	};
 	
-
-	//struct to store probes
-	struct sProbe {
-		Vector3 pos; //where is located
-		Vector3 local; //its ijk pos in the matrix
-		int index; //its index in the linear array
-		SphericalHarmonics sh; //coeffs
-
-
-		//posar tots els bits a 0 de l'estructura: memset(&probe, 0,sizeof(probe))
-
-	};
-
 	// This class is in charge of rendering anything in our system.
 	// Separating the render from anything else makes the code cleaner
 	class Renderer
@@ -173,11 +160,16 @@ namespace GTR {
 		void renderInMenu();
 		void renderFinal();
 
-		void renderProbe(Vector3 pos, float size, float* coeffs);
-
+		
+		/**********************************************************************************************/
+		//irradiance
 		void computeProbe(Scene* scene, sProbe& p);
 
 		void updateIrradianceCache(GTR::Scene* scene);
+
+		void renderProbe(Vector3 pos, float size, float* coeffs);
+
+		void computeProbes(Scene* scene);
 	};
 
 	Texture* CubemapFromHDRE(const char* filename);

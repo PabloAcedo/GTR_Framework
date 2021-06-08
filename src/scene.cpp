@@ -15,6 +15,7 @@ GTR::Scene* GTR::Scene::instance = NULL;
 
 GTR::Scene::Scene()
 {
+	irradianceEnt = NULL;
 	phong = false;
 	instance = this;
 	
@@ -364,3 +365,54 @@ void GTR::LightEntity::orientCam() {
 }
 
 /************************************************************************************************************/
+void GTR::IrradianceEntity::init() {
+	for (int i = 0; i < probes.size(); i++) {
+		sProbe probe = probes[i];
+		//temporal probe test
+		memset(&probe, 0, sizeof(probe));
+		probe.pos.set(76, 38, 96);
+		probe.sh.coeffs[0].set(1, 0, 0);
+	}
+}
+
+GTR::IrradianceEntity::IrradianceEntity(){
+	dimensions[0] = 5;
+	dimensions[1] = 5;
+	dimensions[2] = 5;
+	size = 5;
+
+	start_pos.set(-55, 10, -170);	//Arbitrari
+	end_pos.set(180, 150, 80);
+	delta = (end_pos - start_pos);
+
+	delta.x /= (dimensions[0] - 1);
+	delta.y /= (dimensions[1] - 1);
+	delta.z /= (dimensions[2] - 1);
+}
+
+GTR::IrradianceEntity::~IrradianceEntity(){
+
+}
+
+void GTR::IrradianceEntity::placeProbes() {
+
+	//lets compute the centers
+	//pay attention at the order at which we add them
+	for (int z = 0; z < dimensions[2]; ++z)
+		for (int y = 0; y < dimensions[1]; ++y)
+			for (int x = 0; x < dimensions[0]; ++x)
+			{
+				sProbe p;
+				p.local.set(x, y, z);
+
+				//index in the linear array
+				p.index = x + y * dimensions[0] + z * dimensions[0] * dimensions[1];
+
+				//and its position
+				p.pos = start_pos + delta * Vector3(x, y, z);
+				probes.push_back(p);
+			}
+
+	init();
+}
+

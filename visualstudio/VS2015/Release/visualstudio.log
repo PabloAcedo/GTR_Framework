@@ -1,51 +1,36 @@
-﻿  renderer.cpp
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\extra\cJSON.h(104,1): warning C4099: 'cJSON': type name first seen using 'class' now seen using 'struct'
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\extra\cJSON.h(103): message : see declaration of 'cJSON'
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(25,8): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(26,8): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(70,16): warning C4305: '=': truncation from 'double' to 'float'
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(72,13): warning C4305: '=': truncation from 'double' to 'float'
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(92,20): warning C4018: '<': signed/unsigned mismatch
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(147,20): warning C4018: '<': signed/unsigned mismatch
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(198,20): warning C4018: '<': signed/unsigned mismatch
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(294,10): warning C4244: 'initializing': conversion from 'long' to 'float', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(364,20): warning C4018: '<': signed/unsigned mismatch
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(422,20): warning C4018: '<': signed/unsigned mismatch
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(446,20): warning C4018: '<': signed/unsigned mismatch
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(519,20): warning C4018: '<': signed/unsigned mismatch
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(593,48): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(593,34): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(593,22): warning C4244: 'argument': conversion from 'double' to 'GLint', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(596,58): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(596,44): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(596,32): warning C4244: 'argument': conversion from 'double' to 'GLint', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(596,19): warning C4244: 'argument': conversion from 'double' to 'GLint', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(599,39): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(599,25): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(602,49): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(602,35): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(602,19): warning C4244: 'argument': conversion from 'double' to 'GLint', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(652,63): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(652,43): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(677,20): warning C4018: '<': signed/unsigned mismatch
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(699,63): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(699,43): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(720,64): warning C4305: 'argument': truncation from 'double' to 'float'
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(722,75): warning C4305: 'argument': truncation from 'double' to 'float'
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(735,66): warning C4305: 'argument': truncation from 'double' to 'float'
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(788,37): warning C4305: 'argument': truncation from 'double' to 'float'
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(841,15): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(842,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(843,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(859,21): warning C4305: '=': truncation from 'double' to 'float'
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(905,63): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\src\renderer.cpp(905,43): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+﻿  scene.cpp
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\extra\cJSON.h(104,1): warning C4099: 'cJSON': type name first seen using 'class' now seen using 'struct'
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\extra\cJSON.h(103): message : see declaration of 'cJSON'
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(26,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(100,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(101,28): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(136,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(213,20): warning C4305: '=': truncation from 'double' to 'float'
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(262,51): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(265,53): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(268,55): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(271,50): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(274,75): warning C4305: 'argument': truncation from 'double' to 'float'
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(278,53): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(290,35): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(295,21): warning C4305: '=': truncation from 'double' to 'float'
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(303,15): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(304,15): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(305,15): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(358,34): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(369,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(406,23): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(406,20): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(406,17): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(412,47): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(412,44): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\u137483\Documents\GitHub\GTR_Framework\src\scene.cpp(412,41): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
      Creating library ..\..\framework.lib and object ..\..\framework.exp
 LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
   Generating code
-  4 of 4529 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+  22 of 4401 functions ( 0.5%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    51 functions had inline decision re-evaluated but remain unchanged
+    61 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
 LINK : warning LNK4286: symbol '___glewDeleteBuffers' defined in 'glew32s.lib(glew.obj)' is imported by 'imgui_impl_opengl3.obj'
 LINK : warning LNK4286: symbol '___glewLinkProgram' defined in 'glew32s.lib(glew.obj)' is imported by 'imgui_impl_opengl3.obj'
@@ -80,5 +65,5 @@ LINK : warning LNK4286: symbol '___glewUseProgram' defined in 'glew32s.lib(glew.
 LINK : warning LNK4286: symbol '___glewBindSampler' defined in 'glew32s.lib(glew.obj)' is imported by 'imgui_impl_opengl3.obj'
 LINK : warning LNK4286: symbol '___glewBindVertexArray' defined in 'glew32s.lib(glew.obj)' is imported by 'imgui_impl_opengl3.obj'
 LINK : warning LNK4286: symbol '___glewEnableVertexAttribArray' defined in 'glew32s.lib(glew.obj)' is imported by 'imgui_impl_opengl3.obj'
-glew32s.lib(glew.obj) : warning LNK4099: PDB 'vc120.pdb' was not found with 'glew32s.lib(glew.obj)' or at 'E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\vc120.pdb'; linking object as if no debug info
-  visualstudio.vcxproj -> E:\Guillem\4t Uni\Grafics Temps Real\Github\P2\Framework\framework.exe
+glew32s.lib(glew.obj) : warning LNK4099: PDB 'vc120.pdb' was not found with 'glew32s.lib(glew.obj)' or at 'C:\Users\u137483\Documents\GitHub\GTR_Framework\vc120.pdb'; linking object as if no debug info
+  visualstudio.vcxproj -> C:\Users\u137483\Documents\GitHub\GTR_Framework\framework.exe
