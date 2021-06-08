@@ -16,6 +16,9 @@
 
 using namespace GTR;
 
+//temporal probe test
+sProbe probe;
+
 void updateFBO(FBO& fbo, int textures_num, bool quality) {
 
 	float scale = 1.0;
@@ -52,6 +55,7 @@ bool sortByDistance(RenderCall* i, RenderCall* j) {
 	return(i->distance2Cam > j->distance2Cam);
 }
 
+
 Renderer::Renderer() {
 	current_mode =  1;
 	current_mode_pipeline = current_mode_ilum = 1;
@@ -69,6 +73,15 @@ Renderer::Renderer() {
 	scale_tonemap = 1.0;
 	apply_tonemap = true;
 	apply_ssao = false;
+
+
+	//temporal probe test
+	memset(&probe, 0, sizeof(probe));
+	probe.pos.set(76, 38, 96);
+	probe.sh.coeffs[0].set(1, 0, 0);
+
+	irr_fbo = NULL;
+
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
@@ -92,8 +105,11 @@ void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
 	}
 
 	//sort the rendercalls
-	std::sort(renderCalls.begin(), renderCalls.end(), sortByDistance);
-	std::sort(renderCalls_Blending.begin(), renderCalls_Blending.end(), sortByDistance);
+	if (camera) {
+		std::sort(renderCalls.begin(), renderCalls.end(), sortByDistance);
+		std::sort(renderCalls_Blending.begin(), renderCalls_Blending.end(), sortByDistance);
+	}
+	
 }
 
 void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
@@ -160,10 +176,15 @@ void Renderer::renderNode(const Matrix44& prefab_model, GTR::Node* node, Camera*
 		BoundingBox world_bounding = transformBoundingBox(node_model,node->mesh->box);
 		
 		//if bounding box is inside the camera frustum then the object is probably visible
-		if (camera->testBoxInFrustum(world_bounding.center, world_bounding.halfsize) )
+		if (!camera || camera->testBoxInFrustum(world_bounding.center, world_bounding.halfsize) )	//lazy evaluation, si es compleix !camera, entra
 		{
+			
+			
 			RenderCall* rc = new RenderCall(node_model, node->mesh, node->material);
-			rc->distance2Cam = world_bounding.center.distance(camera->eye);
+			
+			if(camera)	//Agafar nomes els rc que veu la camera... COMPROVAR
+				rc->distance2Cam = world_bounding.center.distance(camera->eye);
+			
 			if (node->material->alpha_mode == BLEND && !renderingShadows) {
 				renderCalls_Blending.push_back(rc);
 			}
@@ -545,10 +566,13 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	renderForward(scene, renderCalls_Blending, camera);
 
-	scene_fbo.unbind();
-
 	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
+
+	//temporal test probes
+	renderProbe(probe.pos, 3.0, probe.sh.coeffs[0].v);
+
+	scene_fbo.unbind();
 
 	renderFinal();
 
@@ -725,8 +749,15 @@ void GTR::Renderer::renderFinal(){
 	shader->disable();
 }
 
+
+//Irradiance & probes
+
 void GTR::Renderer::renderProbe(Vector3 pos, float size, float* coeffs)
 {
+
+	//Com passar dades a renderProbe: (Vector3(),size, probe.sh.coeffs[0].v)
+
+
 	Camera* camera = Camera::current;
 	Shader* shader = Shader::Get("probe");
 	Mesh* mesh = Mesh::Get("data/meshes/sphere.obj", false);
@@ -749,11 +780,22 @@ void GTR::Renderer::renderProbe(Vector3 pos, float size, float* coeffs)
 	mesh->render(GL_TRIANGLES);
 }
 
-void GTR::Renderer::computeProbe(Scene* scene, Camera* cam, sProbe p){
+void GTR::Renderer::computeProbe(Scene* scene,  sProbe& p){
 	FloatImage images[6]; //here we will store the six views
+	Camera cam;
 
 	//set the fov to 90 and the aspect to 1
-	cam->setPerspective(90, 1, 0.1, 1000);
+	cam.setPerspective(90, 1, 0.1, 1000);
+
+	
+	if (!irr_fbo) {
+		
+		irr_fbo = new FBO();
+		irr_fbo->create(64, 64,1, GL_RGB, GL_FLOAT); //Tamany pot canviar, no ha de ser molt gran
+
+	}		
+	 
+	collectRenderCalls(scene, NULL);	//agafara tots els rc, independentment del que vegi la camera (pq ho volem???)
 
 	for (int i = 0; i < 6; ++i) //for every cubemap face
 	{
@@ -762,12 +804,12 @@ void GTR::Renderer::computeProbe(Scene* scene, Camera* cam, sProbe p){
 		Vector3 front = cubemapFaceNormals[i][2];
 		Vector3 center = p.pos + front;
 		Vector3 up = cubemapFaceNormals[i][1];
-		cam->lookAt(eye, center, up);
-		cam->enable();
+		cam.lookAt(eye, center, up);
+		cam.enable();
 
 		//render the scene from this point of view
 		irr_fbo->bind();
-		renderForward(scene, renderCalls, cam);
+		renderForward(scene, renderCalls, &cam);
 		irr_fbo->unbind();
 
 		//read the pixels back and store in a FloatImage
@@ -775,7 +817,14 @@ void GTR::Renderer::computeProbe(Scene* scene, Camera* cam, sProbe p){
 	}
 
 	//compute the coefficients given the six images
-	p.sh = computeSH(images);
+	p.sh = computeSH(images,false);	//falta gamma correcte? 1.0 arbitrari
+}
+
+void GTR::Renderer::updateIrradianceCache(GTR::Scene* scene) {	//actualitza les probes
+
+	//probe.pos = Vector3(0, 1, 0); 
+	computeProbe(scene, probe);
+
 }
 
 

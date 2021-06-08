@@ -312,6 +312,7 @@ void Application::onKeyDown( SDL_KeyboardEvent event )
 			camera->lookAt(scene->main_camera.eye, scene->main_camera.center, Vector3(0, 1, 0));
 			camera->fov = scene->main_camera.fov;
 			break;
+		case SDLK_i: renderer->updateIrradianceCache(scene); break;
 	}
 }
 
