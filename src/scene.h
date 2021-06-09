@@ -118,12 +118,15 @@ namespace GTR {
 		float size; //distance between probes
 
 		std::vector<sProbe> probes;
+		Texture* probes_texture;
 
 		IrradianceEntity();
 		~IrradianceEntity();
 
 		void init();
 		void placeProbes();
+
+		void probesToTexture();
 
 	};
 

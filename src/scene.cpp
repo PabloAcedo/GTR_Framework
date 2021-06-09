@@ -416,3 +416,31 @@ void GTR::IrradianceEntity::placeProbes() {
 	init();
 }
 
+void GTR::IrradianceEntity::probesToTexture() {
+
+
+	if (!probes_texture) {
+		probes_texture = new Texture(
+			9, //9 coefficients per probe
+			probes.size(), //as many rows as probes
+			GL_RGB, //3 channels per coefficient
+			GL_FLOAT); //they require a high range
+	}
+
+	//we must create the color information for the texture. because every SH are 27 floats in the RGB,RGB,... order, we can create an array of SphericalHarmonics and use it as pixels of the texture
+	SphericalHarmonics* sh_data =  new SphericalHarmonics[ (dimensions[0] * dimensions[1] * dimensions[2]) ];
+	//std::vector<SphericalHarmonics> sh_data2;
+
+	for (int i = 0; i < probes.size(); ++i)
+	{
+		
+		sh_data[i] = probes[i].sh;	//teoricament, si shan guardat daquesta forma
+		
+		//sh_data2.push_back(probes[i].sh);
+	}
+
+	probes_texture->upload(GL_RGB, GL_FLOAT, false, (uint8*)sh_data);	//Ho puja a la gpu?????
+	
+	delete[] sh_data;
+
+}
