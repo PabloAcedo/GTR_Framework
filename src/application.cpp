@@ -90,6 +90,8 @@ Application::Application(int window_width, int window_height, SDL_Window* window
 	renderer = new GTR::Renderer(); //here so we have opengl ready in constructor
 	renderer->current_mode = 1; //forward multipass
 
+	
+
 	//hide the cursor
 	SDL_ShowCursor(!mouse_locked); //hide or show the mouse
 }

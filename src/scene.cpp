@@ -376,18 +376,24 @@ void GTR::IrradianceEntity::init() {
 }
 
 GTR::IrradianceEntity::IrradianceEntity(){
-	dimensions[0] = 5;
-	dimensions[1] = 5;
-	dimensions[2] = 5;
-	size = 5;
+	active = false;
+	probes_texture = NULL;
+	size = 2;
+	normal_dist = 1.0;
+	bool read_irr_info = read("data/irradianceData/irradiance.bin");
+	if (!read_irr_info) {
+		int fact_dist = 6;
+		dimensions = Vector3(12, 10, 12);
+		start_pos.set(-60 * fact_dist, 2, -90 * fact_dist);
+		end_pos.set(100 * fact_dist, 300, 90 * fact_dist);
+		delta = (end_pos - start_pos);
 
-	start_pos.set(-55, 10, -170);	//Arbitrari
-	end_pos.set(180, 150, 80);
-	delta = (end_pos - start_pos);
+		delta.x /= (dimensions[0] - 1);
+		delta.y /= (dimensions[1] - 1);
+		delta.z /= (dimensions[2] - 1);
+		placeProbes();
 
-	delta.x /= (dimensions[0] - 1);
-	delta.y /= (dimensions[1] - 1);
-	delta.z /= (dimensions[2] - 1);
+	}
 }
 
 GTR::IrradianceEntity::~IrradianceEntity(){
@@ -420,27 +426,93 @@ void GTR::IrradianceEntity::probesToTexture() {
 
 
 	if (!probes_texture) {
+		int p_size = probes.size();
 		probes_texture = new Texture(
 			9, //9 coefficients per probe
-			probes.size(), //as many rows as probes
+			p_size, //as many rows as probes
 			GL_RGB, //3 channels per coefficient
 			GL_FLOAT); //they require a high range
 	}
 
 	//we must create the color information for the texture. because every SH are 27 floats in the RGB,RGB,... order, we can create an array of SphericalHarmonics and use it as pixels of the texture
 	SphericalHarmonics* sh_data =  new SphericalHarmonics[ (dimensions[0] * dimensions[1] * dimensions[2]) ];
-	//std::vector<SphericalHarmonics> sh_data2;
 
 	for (int i = 0; i < probes.size(); ++i)
 	{
-		
-		sh_data[i] = probes[i].sh;	//teoricament, si shan guardat daquesta forma
-		
-		//sh_data2.push_back(probes[i].sh);
+		sh_data[i] = probes[i].sh;
 	}
 
-	probes_texture->upload(GL_RGB, GL_FLOAT, false, (uint8*)sh_data);	//Ho puja a la gpu?????
-	
+	probes_texture->upload(GL_RGB, GL_FLOAT, false, (uint8*)sh_data);
+	//disable any texture filtering when reading
+	probes_texture->bind();
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
 	delete[] sh_data;
 
+	active = true;
 }
+
+void GTR::IrradianceEntity::uploadUniforms(Shader*& shader){
+	shader->setUniform("u_irr_start", start_pos);
+	shader->setUniform("u_irr_end", end_pos);
+	shader->setUniform("u_irr_delta", delta);
+	shader->setUniform("u_irr_size", size);
+	shader->setUniform("u_irr_normal_dist", normal_dist);
+	int probes_num = probes.size();
+	shader->setUniform("u_irr_probes_num", probes_num);
+	shader->setUniform("u_irr_dimensions", dimensions);
+	shader->setUniform("u_irr_active", active);
+	if(probes_texture != NULL)
+		shader->setUniform("u_probes_texture", probes_texture, 9);
+}
+
+void GTR::IrradianceEntity::save(){
+	// saveIrradianceToDisk ---------------------------------
+	//fill header structure
+	sIrrHeader header;
+
+	header.start = start_pos;
+	header.end = end_pos;
+	header.dims = dimensions;
+	header.delta = delta;
+	header.num_probes = probes.size();
+
+	//write to file header and probes data
+	FILE* f = fopen("data/irradianceData/irradiance.bin", "wb");
+	fwrite(&header, sizeof(header), 1, f);
+	fwrite(&(probes[0]), sizeof(sProbe), probes.size(), f);
+	fclose(f);
+
+}
+
+bool GTR::IrradianceEntity::read(const char* filename){
+	//load probes info from disk
+	FILE* f = fopen(filename, "rb");
+	if (!f)
+		return false;
+
+	//read header
+	sIrrHeader header;
+	fread(&header, sizeof(header), 1, f);
+
+	//copy info from header to our local vars
+	start_pos = header.start;
+	end_pos = header.end;
+	dimensions = header.dims;
+	delta = header.delta;
+	int num_probes = header.num_probes;
+
+	//allocate space for the probes
+	probes.resize(num_probes);
+
+	//read from disk directly to our probes container in memory
+	fread(&probes[0], sizeof(sProbe), probes.size(), f);
+	fclose(f);
+
+	//build the texture again…
+	probesToTexture();
+	std::cout << "+ Irradiance uploaded" << std::endl;
+	return true;
+}
+

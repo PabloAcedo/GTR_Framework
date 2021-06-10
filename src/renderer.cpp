@@ -81,7 +81,9 @@ Renderer::Renderer() {
 	probe.sh.coeffs[0].set(1, 0, 0);
 
 	irr_fbo = NULL;
-
+	show_irr_tex = false;
+	showProbesGrid = false;
+	apply_irr = false;
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
@@ -511,8 +513,8 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	//render gbuffers
 	fbo_gbuffers.bind();
 
-	glClearColor(0, 0, 0, 0);
-	//glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
+	//glClearColor(0, 0, 0, 0);
+	glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	checkGLErrors();
 
@@ -537,6 +539,9 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	if(apply_ssao)
 		ssao.compute(fbo_gbuffers.depth_texture, fbo_gbuffers.color_textures[1], camera, ao_map);
+
+	if(scene->irradianceEnt && scene->irradianceEnt->active)
+		irradianceMap(fbo_gbuffers.depth_texture, fbo_gbuffers.color_textures[1], camera);
 
 	updateFBO(scene_fbo, 1, true);
 
@@ -572,22 +577,25 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	//temporal test probes
 	if (scene->irradianceEnt == NULL) {
 		scene->irradianceEnt = new IrradianceEntity();
-		scene->irradianceEnt->placeProbes();
 	} 
 
-	//temporal test probes
-	for (int i = 0; i < scene->irradianceEnt->probes.size(); i++) {
-		sProbe probe2 = scene->irradianceEnt->probes[i];
-		renderProbe(probe2.pos, 3.0, probe2.sh.coeffs[0].v);
+	if (irr_map_fbo.color_textures[0] && show_irr_tex) {
+		irr_map_fbo.color_textures[0]->toViewport();
 	}
-	//scene->irradianceEnt->probes_texture->bind();
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+	//temporal test probes
+	if (showProbesGrid) {
+		for (int i = 0; i < scene->irradianceEnt->probes.size(); i++) {
+			sProbe probe2 = scene->irradianceEnt->probes[i];
+			renderProbe(probe2.pos, 3.0, probe2.sh.coeffs[0].v);
+		}
+	}
 
 	scene_fbo.unbind();
 
 	renderFinal();
+
+	
 
 	if(showGbuffers)
 		showgbuffers(camera);
@@ -595,7 +603,7 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	if (showSSAO) {
 		ao_map->toViewport();
 	}
-		
+
 }
 
 void GTR::Renderer::showgbuffers(Camera* camera) {
@@ -683,7 +691,7 @@ void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera
 }
 
 void GTR::Renderer::multipassDeferred(Camera* camera) {
-	renderAmbient();
+	renderAmbient(camera);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 
@@ -693,7 +701,7 @@ void GTR::Renderer::multipassDeferred(Camera* camera) {
 	}
 }
 
-void GTR::Renderer::renderAmbient(){
+void GTR::Renderer::renderAmbient(Camera* camera){
 	Shader* shader = Shader::Get("deferred_ambient");
 	if (shader == NULL) return;
 	Mesh* quad = Mesh::getQuad();
@@ -706,11 +714,24 @@ void GTR::Renderer::renderAmbient(){
 	shader->setUniform("u_has_omr", true);
 	shader->setUniform("u_ssao", ao_map, 5);//apply_ssao
 	shader->setUniform("u_apply_ssao", apply_ssao);
+	shader->setUniform("u_apply_irradiance", apply_irr);
 	//pass the inverse window resolution, this may be useful
 	int width = Application::instance->window_width;
 	int height = Application::instance->window_height;
 	shader->setUniform("u_iRes", Vector2(1.0 / (float)width, 1.0 / (float)height));
 	shader->setUniform("u_light_ambient", Scene::instance->ambient_light);
+
+	shader->setUniform("u_depth_texture", fbo_gbuffers.depth_texture, 3);
+	shader->setUniform("u_normal_texture", fbo_gbuffers.color_textures[1], 1);
+	Matrix44 inv_vp = camera->viewprojection_matrix;
+	inv_vp.inverse();
+	shader->setUniform("u_inverse_viewprojection", inv_vp);
+
+	if(Scene::instance->irradianceEnt && Scene::instance->irradianceEnt->active)
+		Scene::instance->irradianceEnt->uploadUniforms(shader);
+
+
+
 	quad->render(GL_TRIANGLES);
 	shader->disable();
 }
@@ -726,7 +747,11 @@ void GTR::Renderer::renderInMenu(){
 	ImGui::Checkbox("Update Shadows", &cast_shadows);
 
 	if (current_mode_pipeline == GTR::ePipelineMode::DEFERRED) {
+		//apply_irr
 		ImGui::Checkbox("Show gbuffers", &showGbuffers);
+		ImGui::Checkbox("Apply irradiance", &apply_irr);
+		ImGui::Checkbox("Show irradianceTex", &show_irr_tex);
+		ImGui::Checkbox("Show Probes Grid", &showProbesGrid);
 		if(ImGui::TreeNode("SSAO")) {
 			ImGui::Checkbox("Apply SSAO", &apply_ssao);
 			if (apply_ssao) {
@@ -762,7 +787,7 @@ void GTR::Renderer::renderFinal(){
 	shader->disable();
 }
 
-
+/********************************************************************************************************************/
 //Irradiance & probes
 
 void GTR::Renderer::renderProbe(Vector3 pos, float size, float* coeffs)
@@ -840,6 +865,7 @@ void GTR::Renderer::computeProbes(Scene* scene) {
 		computeProbe(scene, scene->irradianceEnt->probes[i]);
 	}
 	scene->irradianceEnt->probesToTexture();
+	scene->irradianceEnt->save();
 }
 
 void GTR::Renderer::updateIrradianceCache(GTR::Scene* scene) {	//actualitza les probes
@@ -849,6 +875,35 @@ void GTR::Renderer::updateIrradianceCache(GTR::Scene* scene) {	//actualitza les 
 
 }
 
+void GTR::Renderer::irradianceMap(Texture* depth_buffer, Texture* normal_buffer, Camera* camera) {
+	updateFBO(irr_map_fbo, 1, false);
+	Shader* shader = Shader::Get("irr");
+	if (shader == NULL)
+		return;
+	Mesh* quad = Mesh::getQuad();
+
+	irr_map_fbo.bind();
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+
+	shader->enable();
+	shader->setUniform("u_depth_texture", depth_buffer, 3);
+	shader->setUniform("u_normal_texture", normal_buffer, 1);
+	Matrix44 inv_vp = camera->viewprojection_matrix;
+	inv_vp.inverse();
+	shader->setUniform("u_inverse_viewprojection", inv_vp);
+
+	//pass the inverse window resolution, this may be useful
+	int width = Application::instance->window_width;
+	int height = Application::instance->window_height;
+	shader->setUniform("u_iRes", Vector2(1.0 / (float)width, 1.0 / (float)height));
+
+	Scene::instance->irradianceEnt->uploadUniforms(shader);
+
+	quad->render(GL_TRIANGLES);
+	shader->disable();
+	irr_map_fbo.unbind();
+}
 
 /********************************************************************************************************************/
 std::vector<Vector3> generateSpherePoints(int num, float radius, bool hemi)
@@ -887,11 +942,6 @@ void GTR::SSAOFX::compute(Texture* depth_buffer, Texture* normal_buffer, Camera*
 	//FBO* fbo = Texture::getGlobalFBO(output);
 	updateFBO(ao_fbo, 1, false);
 	int w = ao_fbo.width; int h = ao_fbo.height;
-	/*if (ao_fbo.fbo_id == 0 || (w != Application::instance->window_width) || (h != Application::instance->window_height)) {//Initialize fbo
-		ao_fbo.create(Application::instance->window_width,
-			Application::instance->window_height,
-			1, GL_RGBA, GL_UNSIGNED_BYTE);
-	}*/
 	ao_fbo.setTexture(output);
 	ao_fbo.bind();
 	

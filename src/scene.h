@@ -107,15 +107,25 @@ namespace GTR {
 
 	};
 
+	struct sIrrHeader {
+		Vector3 start;
+		Vector3 end;
+		Vector3 delta;
+		Vector3 dims;
+		int num_probes;
+	};
+
 	class IrradianceEntity : public BaseEntity {
 	public:
 		Matrix44 model;
 
-		int dimensions[3];
+		Vector3 dimensions;
 		Vector3 start_pos;
 		Vector3 end_pos;
 		Vector3 delta;
 		float size; //distance between probes
+		float normal_dist;
+		bool active;
 
 		std::vector<sProbe> probes;
 		Texture* probes_texture;
@@ -127,7 +137,10 @@ namespace GTR {
 		void placeProbes();
 
 		void probesToTexture();
+		void uploadUniforms(Shader*& shader);
 
+		void save();
+		bool read(const char* filename);
 	};
 
 	//contains all entities of the scene

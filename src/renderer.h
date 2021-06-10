@@ -6,7 +6,7 @@
 //forward declarations
 class Camera;
 class Shader;
-
+class Texture;
 
 namespace GTR {
 
@@ -30,6 +30,7 @@ namespace GTR {
 
 	class Prefab;
 	class Material;
+	
 
 	class SSAOFX {
 	public:
@@ -96,6 +97,10 @@ namespace GTR {
 
 		//irradiance
 		FBO* irr_fbo;
+		FBO irr_map_fbo;
+		bool show_irr_tex;
+		bool showProbesGrid;
+		bool apply_irr;
 
 		//bools
 		bool renderingShadows;
@@ -154,7 +159,7 @@ namespace GTR {
 
 		void multipassDeferred(Camera* camera);
 
-		void renderAmbient();
+		void renderAmbient(Camera* camera);
 
 		/**********************************************************************************************/
 		void renderInMenu();
@@ -170,6 +175,8 @@ namespace GTR {
 		void renderProbe(Vector3 pos, float size, float* coeffs);
 
 		void computeProbes(Scene* scene);
+
+		void irradianceMap(Texture* depth_buffer, Texture* normal_buffer, Camera* camera);
 	};
 
 	Texture* CubemapFromHDRE(const char* filename);
