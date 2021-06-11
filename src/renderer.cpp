@@ -84,6 +84,7 @@ Renderer::Renderer() {
 	show_irr_tex = false;
 	showProbesGrid = false;
 	apply_irr = false;
+
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
@@ -113,6 +114,32 @@ void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
 	}
 	
 }
+
+void Renderer::renderSkybox(Texture* skybox, Camera* camera) {
+	//render
+	Mesh* mesh = Mesh::Get("data/meshes/sphere.obj", false);
+	Shader* shader = Shader::Get("skybox");
+	shader->enable();
+	Matrix44 m;
+	m.translate(camera->eye.x, camera->eye.y, camera->eye.z);
+	m.scale(10, 10, 10);
+	
+	
+	shader->setUniform("u_viewprojection", camera->viewprojection_matrix);
+	shader->setUniform("u_camera_position", camera->eye);
+	shader->setUniform("u_model", m);
+
+	shader->setTexture("u_texture", skybox, 0);
+
+	glDisable(GL_BLEND);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	mesh->render(GL_TRIANGLES);
+
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
+}
+
 
 void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 {
@@ -514,7 +541,11 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	fbo_gbuffers.bind();
 
 	//glClearColor(0, 0, 0, 0);
-	glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
+	if (scene->environment)
+		renderSkybox(scene->environment, camera);
+	else 
+		glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
+	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	checkGLErrors();
 
@@ -835,7 +866,7 @@ void GTR::Renderer::computeProbe(Scene* scene,  sProbe& p){
 	}		
 
 
-	collectRenderCalls(scene, NULL);	//agafara tots els rc, independentment del que vegi la camera (pq ho volem???)
+	collectRenderCalls(scene, NULL);	//agafara tots els rc, independentment del que vegi la camera
 
 	for (int i = 0; i < 6; ++i) //for every cubemap face
 	{
@@ -906,6 +937,7 @@ void GTR::Renderer::irradianceMap(Texture* depth_buffer, Texture* normal_buffer,
 }
 
 /********************************************************************************************************************/
+//SSAO computations
 std::vector<Vector3> generateSpherePoints(int num, float radius, bool hemi)
 {
 	std::vector<Vector3> points;

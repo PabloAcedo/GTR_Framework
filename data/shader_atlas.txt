@@ -4,6 +4,7 @@ texture basic.vs texture.fs
 depth quad.vs depth.fs
 multi basic.vs multi.fs
 //forward
+skybox basic.vs skybox.fs
 multi_pass basic.vs multi_pass.fs
 single_pass basic.vs single_pass.fs 
 //deferred
@@ -795,6 +796,28 @@ void main()
 
 	if(color.a < u_alpha_cutoff)
 		discard;
+
+	FragColor = color;
+}
+
+
+\skybox.fs
+
+#version 330 core
+
+in vec3 v_world_position;
+
+uniform vec4 u_color;
+uniform samplerCube u_texture;
+uniform vec3 u_camera_position;
+
+out vec4 FragColor;
+
+void main()
+{
+
+	vec3 V = v_world_position - u_camera_position;
+	vec4 color = texture( u_texture, -V );
 
 	FragColor = color;
 }

@@ -7,6 +7,7 @@
 class Camera;
 class Shader;
 class Texture;
+class HDRE;
 
 namespace GTR {
 
@@ -114,6 +115,8 @@ namespace GTR {
 
 		/**********************************************************************************************/
 		//forward
+		void renderSkybox(Texture* skybox, Camera* camera);
+
 		void commonUniforms(Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh, bool fromOther); //texture
 
 		void multipassUniforms(LightEntity* light, Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh, int iteration); //multipass

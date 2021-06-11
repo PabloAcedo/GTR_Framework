@@ -4,9 +4,11 @@
 #include "fbo.h"
 #include "texture.h"
 #include "application.h"
+#include "renderer.h"
 
 #include "prefab.h"
 #include "extra/cJSON.h"
+#include "extra/hdre.h"
 
 
 /************************************************************************************************************/
@@ -59,6 +61,12 @@ bool GTR::Scene::load(const char* filename)
 	}
 
 	//read global properties
+
+	//HDRE* hdre = new HDRE();
+	//if (hdre->load((cJSON_GetObjectItem(json, "environment")->valuestring)))	//Falta el lector de chars?
+
+	environment = GTR::CubemapFromHDRE("data/night.hdre");
+
 	background_color = readJSONVector3(json, "background_color", background_color);
 	ambient_light = readJSONVector3(json, "ambient_light", ambient_light );
 	main_camera.eye = readJSONVector3(json, "camera_position", main_camera.eye);

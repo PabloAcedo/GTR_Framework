@@ -20,7 +20,6 @@ class Texture;
 namespace GTR {
 
 
-
 	enum eEntityType {
 		NONE = 0,
 		PREFAB = 1,
@@ -148,6 +147,8 @@ namespace GTR {
 	{
 	public:
 		static Scene* instance;
+
+		Texture* environment;
 
 		Vector3 background_color;
 		Vector3 ambient_light;
