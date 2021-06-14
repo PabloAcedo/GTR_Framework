@@ -100,10 +100,6 @@ namespace GTR {
 		Vector3 local; //its ijk pos in the matrix
 		int index; //its index in the linear array
 		SphericalHarmonics sh; //coeffs
-
-
-		//posar tots els bits a 0 de l'estructura: memset(&probe, 0,sizeof(probe))
-
 	};
 
 	struct sIrrHeader {
@@ -114,20 +110,28 @@ namespace GTR {
 		int num_probes;
 	};
 
+	
+	struct sReflectionProbe {
+		Vector3 pos;
+		Texture* cubemap = NULL;
+	};
+
 	class IrradianceEntity : public BaseEntity {
 	public:
 		Matrix44 model;
-
 		Vector3 dimensions;
 		Vector3 start_pos;
 		Vector3 end_pos;
 		Vector3 delta;
+
 		float size; //distance between probes
 		float normal_dist;
 		bool active;
 
 		std::vector<sProbe> probes;
 		Texture* probes_texture;
+
+		
 
 		IrradianceEntity();
 		~IrradianceEntity();
@@ -156,6 +160,7 @@ namespace GTR {
 		std::vector<LightEntity*> lights;
 
 		IrradianceEntity* irradianceEnt;
+		std::vector<sReflectionProbe*> reflection_probes;
 
 		bool phong;
 

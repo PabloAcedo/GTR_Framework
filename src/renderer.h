@@ -49,9 +49,10 @@ namespace GTR {
 	public:
 		Matrix44 model;
 		Mesh* mesh;
+
 		Material* material;
 		float distance2Cam;
-
+		Texture* reflection;
 		RenderCall(Matrix44 model, Mesh* mesh, Material* material);
 	};
 	
@@ -102,6 +103,12 @@ namespace GTR {
 		bool show_irr_tex;
 		bool showProbesGrid;
 		bool apply_irr;
+
+
+		//reflections
+		bool show_reflection_probes;
+		Texture* currentReflection;
+		FBO reflection_fbo;
 
 		//bools
 		bool renderingShadows;
@@ -180,6 +187,16 @@ namespace GTR {
 		void computeProbes(Scene* scene);
 
 		void irradianceMap(Texture* depth_buffer, Texture* normal_buffer, Camera* camera);
+
+		/**********************************************************************************************/
+		//reflections
+		void updateReflectionProbes(Scene* scene);
+
+		void captureReflectionProbe(Scene* scene, sReflectionProbe*& probe);
+
+		void renderReflectionProbes(Scene* scene, Camera* camera);
+
+		void addReflectionsToScene();
 	};
 
 	Texture* CubemapFromHDRE(const char* filename);

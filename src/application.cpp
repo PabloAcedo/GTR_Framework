@@ -315,6 +315,7 @@ void Application::onKeyDown( SDL_KeyboardEvent event )
 			camera->fov = scene->main_camera.fov;
 			break;
 		case SDLK_i: renderer->updateIrradianceCache(scene); break;
+		case SDLK_o: renderer->updateReflectionProbes(scene); break;
 	}
 }
 

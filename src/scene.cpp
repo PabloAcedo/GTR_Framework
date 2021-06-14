@@ -17,6 +17,23 @@ GTR::Scene* GTR::Scene::instance = NULL;
 
 GTR::Scene::Scene()
 {
+	for (int i = 0; i < 5; i++) {
+		//create the probe
+		sReflectionProbe* probe = new sReflectionProbe();
+
+		//set it up
+		probe->pos.set(90, 56, i*40);
+		probe->cubemap = new Texture();
+		probe->cubemap->createCubemap(
+			512, 512,
+			NULL,
+			GL_RGB, GL_UNSIGNED_INT, false);
+
+		//add it to the list
+		reflection_probes.push_back(probe);
+	}
+	
+
 	irradianceEnt = NULL;
 	phong = false;
 	instance = this;
