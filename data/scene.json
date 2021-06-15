@@ -48,12 +48,23 @@
 			"scale":[0.5,0.5,0.5]
 		},
 		{
-			"name":"tree",
-			"type":"PREFAB",
-			"filename":"prefabs/tree/scene.gltf",
-			"position":[102,0,401],
-			"angle":-90,
-			"scale":[0.8,0.8,0.8]
+			"name": "tree",
+			"type": "PREFAB",
+			"filename": "prefabs/tree/scene.gltf",
+			"position": [ 102, 0, 401 ],
+			"angle": -90,
+			"scale": [ 0.8, 0.8, 0.8 ]
+		},
+		{
+			"name": "moonlight",
+			"type": "LIGHT",
+			"position": [ 150, 300, 50 ],
+			"light_color": [ 0.2, 0.2, 0.2 ],
+			"light_type": "directional",
+			"intensity": 1.5,
+			"area_size": 1500,
+			"max_dist": 1000,
+			"target": [ -80, 0, -50 ]
 		},
 		{
 			"name":"pointlight",
@@ -84,17 +95,7 @@
 			"intensity":5,
 			"cone_angle":45.0,
 			"spot_exp": 60.0
-		},
-		{
-			"name":"moonlight",
-			"type":"LIGHT",
-			"position":[150,300,50],
-			"light_color":[0.2,0.2,0.2],
-			"light_type": "directional",
-			"intensity":1.5,
-			"area_size":1500,
-			"max_dist":1000,
-			"target":[-80,0,-50]
 		}
+		
 	]
 }

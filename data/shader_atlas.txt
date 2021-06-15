@@ -186,13 +186,19 @@ vec3 Irradiance(vec3 wp, vec3 N){
 	//computing nearest probe index based on world position
 	vec3 irr_range = u_irr_end - u_irr_start;
 
-	vec3 irr_local_pos = wp - u_irr_start + N * u_irr_normal_dist;
+	//vec3 irr_local_pos = wp - u_irr_start + N * u_irr_normal_dist;
 
 	//see if point is inside grid range
-	if(inside(irr_range, irr_local_pos) == false)
-		return vec3(0.0);
+	//if(inside(irr_range, irr_local_pos) == false)
+		//return vec3(0.0);
 
-	//vec3 irr_local_pos = clamp( wp - u_irr_start + N * u_irr_normal_dist, vec3(0.0), irr_range );
+	vec3 irr_local_pos = wp - u_irr_start + N * u_irr_normal_dist;
+	
+	float attenuation = 1.0f;
+	if(inside(irr_range, irr_local_pos) == false)
+		attenuation = 0.002;
+
+	irr_local_pos = clamp( irr_local_pos, vec3(0.0), irr_range -1 );
 
 	//convert from world pos to grid pos
 	vec3 irr_norm_pos = irr_local_pos / u_irr_delta;
@@ -207,7 +213,7 @@ vec3 Irradiance(vec3 wp, vec3 N){
 
 	irradiance += interpolateSHs(local_indices, factors, N);
 
-	return irradiance;
+	return irradiance*attenuation;
 }
 
 
@@ -814,13 +820,17 @@ uniform vec4 u_color;
 uniform samplerCube u_texture;
 uniform vec3 u_camera_position;
 #include "color_correction"
-
+uniform bool u_is_forward;
 out vec4 FragColor;
 
 void main()
 {
 	vec3 V = v_world_position - u_camera_position;
-	vec3 skybox_color = gamma_to_linear(texture( u_texture, V ).xyz);
+	vec3 skybox_color = texture( u_texture, V ).xyz;
+
+	if(u_is_forward)
+		skybox_color = gamma_to_linear(skybox_color);
+
 	vec4 color = vec4(skybox_color,1.0);
 
 	FragColor = color;
@@ -1379,7 +1389,7 @@ void main()
 	//ignore pixels in the background
 	if(depth >= 1.0)
 	{
-		FragColor = vec4(1.0);
+		FragColor = vec4(0.0);
 		return;
 	}
 
@@ -1404,18 +1414,16 @@ void main()
 #version 330 core
 
 in vec2 v_uv;
-#include "color_correction"
-#include "material"
 
+uniform sampler2D u_texture;
 uniform sampler2D u_depth_texture;
 uniform sampler2D u_normal_texture;
-
+uniform sampler2D u_omr;
+uniform samplerCube u_environment_texture;
 uniform mat4 u_inverse_viewprojection;
 uniform vec2 u_iRes;
 uniform vec3 u_camera_position;
 
-uniform samplerCube u_reflections[5];
-uniform vec3 u_ref_positions[5];
 
 out vec4 FragColor;
 
@@ -1423,7 +1431,6 @@ void main()
 {
 	//extract uvs from pixel screenpos. From  [-1 1]to [0 1]
 	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
-	sMaterial material = init_material(uv);
 
 	//From [0 1]to [-1 1], and inverse to get world position
 	float depth = texture( u_depth_texture, uv ).x;
@@ -1435,9 +1442,14 @@ void main()
 	vec3 N = texture( u_normal_texture, uv ).xyz*2.0-vec3(1.0);
 	N = normalize(N);
 	
+	float roughness = max(0.01, texture2D( u_omr, uv ).y); 
+	float metalness = min(texture2D( u_omr, uv ).z,0.99);
+
 	vec3 V = world_pos - u_camera_position;
 	vec3 R = reflect(V,N);
 	
-	vec4 color = vec4(1.0);
-	FragColor = color;
+	vec3 baseColor = texture( u_texture, uv ).xyz;
+	vec3 reflection = textureLod(u_environment_texture, R, 0.0 ).xyz;
+
+	FragColor = vec4( reflection, 1.0 );
 }

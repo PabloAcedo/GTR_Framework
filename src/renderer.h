@@ -122,7 +122,7 @@ namespace GTR {
 
 		/**********************************************************************************************/
 		//forward
-		void renderSkybox(Texture* skybox, Camera* camera);
+		void renderSkybox(Texture* skybox, Camera* camera, bool isForward);
 
 		void commonUniforms(Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh, bool fromOther); //texture
 
@@ -196,7 +196,7 @@ namespace GTR {
 
 		void renderReflectionProbes(Scene* scene, Camera* camera);
 
-		void addReflectionsToScene();
+		void addReflectionsToScene(Camera* camera);
 	};
 
 	Texture* CubemapFromHDRE(const char* filename);

@@ -116,7 +116,7 @@ void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
 	
 }
 
-void Renderer::renderSkybox(Texture* skybox, Camera* camera) {
+void Renderer::renderSkybox(Texture* skybox, Camera* camera, bool isforward) {
 	//render
 	Mesh* mesh = Mesh::Get("data/meshes/sphere.obj", false);
 	Shader* shader = Shader::Get("skybox");
@@ -129,7 +129,7 @@ void Renderer::renderSkybox(Texture* skybox, Camera* camera) {
 	shader->setUniform("u_viewprojection", camera->viewprojection_matrix);
 	shader->setUniform("u_camera_position", camera->eye);
 	shader->setUniform("u_model", m);
-
+	shader->setUniform("u_is_forward", isforward);
 	shader->setTexture("u_texture", skybox, 0);
 
 	glDisable(GL_BLEND);
@@ -156,7 +156,7 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 		// Clear the color and the depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		checkGLErrors();
-		renderSkybox(Scene::instance->environment, camera);
+		renderSkybox(Scene::instance->environment, camera, true);
 		renderForward(scene, renderCalls, camera);
 		if (!renderingShadows) {
 			renderForward(scene, renderCalls_Blending, camera);
@@ -560,7 +560,7 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	checkGLErrors();
 	if (scene->environment)
-		renderSkybox(scene->environment, camera);
+		renderSkybox(scene->environment, camera, false);
 
 	for (int i = 0; i < rc.size(); i++) {
 		renderMeshWithMaterial(GTR::eRenderMode::GBUFFERS,rc[i]->model, rc[i]->mesh, rc[i]->material, camera);
@@ -614,6 +614,8 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
 
+	
+
 	//temporal test probes
 	if (scene->irradianceEnt == NULL) {
 		scene->irradianceEnt = new IrradianceEntity();
@@ -636,7 +638,13 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	scene_fbo.unbind();
 
-	renderFinal();
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	addReflectionsToScene(camera);
+	glDisable(GL_BLEND);
+
+	reflection_fbo.color_textures[0]->toViewport();
+	//renderFinal();
 
 	if(showGbuffers)
 		showgbuffers(camera);
@@ -823,7 +831,7 @@ void GTR::Renderer::renderFinal(){
 	shader->setUniform("u_lumwhite2", lum_white * lum_white);
 	shader->setUniform("u_scale", scale_tonemap); 
 	shader->setUniform("u_apply", apply_tonemap);
-	scene_fbo.color_textures[0]->toViewport(shader);
+	reflection_fbo.color_textures[0]->toViewport(shader);
 	shader->disable();
 }
 
@@ -981,7 +989,7 @@ void GTR::Renderer::captureReflectionProbe(Scene* scene, sReflectionProbe*& prob
 		glClearColor(0, 0, 0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		checkGLErrors();
-		renderSkybox(Scene::instance->environment, cam);
+		renderSkybox(Scene::instance->environment, cam, true);
 		renderForward(scene, renderCalls, cam);
 		irr_fbo->unbind();
 	}
@@ -1016,12 +1024,34 @@ void GTR::Renderer::renderReflectionProbes(Scene* scene, Camera* camera){
 	glDisable(GL_CULL_FACE);
 }
 
-void GTR::Renderer::addReflectionsToScene(){
-	Texture* reflectionsTex[5]; 
-	Vector3 positions[5];
+/*void setNearestReflectionProbe(BoundingBox worldBB, RenderCall*& rc) {
+	float aux_dist = 1000.0 * 1000.0;
 	for (int i = 0; i < Scene::instance->reflection_probes.size(); i++) {
+		sReflectionProbe* probe = Scene::instance->reflection_probes[i];
+		float distance = worldBB.center.distance(probe->pos);
+		if (distance < aux_dist) {
+			rc->reflection = probe->cubemap;
+			aux_dist = distance;
+		}
+	}
+}*/
+
+void GTR::Renderer::addReflectionsToScene(Camera* camera){
+	//Texture* reflectionsTex[5]; 
+	//Vector3 positions[5];
+	/*for (int i = 0; i < Scene::instance->reflection_probes.size(); i++) {
 		reflectionsTex[i] = Scene::instance->reflection_probes[i]->cubemap;
 		positions[i] = Scene::instance->reflection_probes[i]->pos;
+	}*/
+	Texture* cubemap = NULL;
+	float aux_dist = 1000.0 * 1000.0;
+	for (int i = 0; i < Scene::instance->reflection_probes.size(); i++) {
+		sReflectionProbe* probe = Scene::instance->reflection_probes[i];
+		float distance = camera->eye.distance(probe->pos);
+		if (distance < aux_dist) {
+			cubemap = probe->cubemap;
+			aux_dist = distance;
+		}
 	}
 	Shader* shader = Shader::Get("add_reflections");
 	if (shader == NULL) return;
@@ -1029,7 +1059,20 @@ void GTR::Renderer::addReflectionsToScene(){
 	updateFBO(reflection_fbo, 1, false);
 	reflection_fbo.bind();
 	shader->enable();
-	shader->setUniform3Array("u_ref_positions", (float*)positions, 5);
+	shader->setUniform("u_texture", scene_fbo.color_textures[0],0);
+	shader->setUniform("u_normal_texture", fbo_gbuffers.color_textures[1], 1);
+	shader->setUniform("u_depth_texture", fbo_gbuffers.depth_texture, 2);
+	shader->setUniform("u_omr", fbo_gbuffers.color_textures[2], 3);
+	shader->setUniform("u_camera_position", camera->eye);
+	if(cubemap)
+		shader->setTexture("u_environment_texture", cubemap, 9);
+	int width = Application::instance->window_width;
+	int height = Application::instance->window_height;
+	shader->setUniform("u_iRes", Vector2(1.0 / (float)width, 1.0 / (float)height));
+	Matrix44 inv_vp = camera->viewprojection_matrix;
+	inv_vp.inverse();
+	shader->setUniform("u_inverse_viewprojection", inv_vp);
+	mesh->render(GL_TRIANGLES);
 	shader->disable();
 	reflection_fbo.unbind();
 
