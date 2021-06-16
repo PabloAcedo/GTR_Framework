@@ -110,10 +110,11 @@ namespace GTR {
 		int num_probes;
 	};
 
-	
-	struct sReflectionProbe {
-		Vector3 pos;
+	class reflectionProbeEntity : public BaseEntity {
+	public:
 		Texture* cubemap = NULL;
+		reflectionProbeEntity();
+		void configure(cJSON* json);
 	};
 
 	class IrradianceEntity : public BaseEntity {
@@ -130,8 +131,6 @@ namespace GTR {
 
 		std::vector<sProbe> probes;
 		Texture* probes_texture;
-
-		
 
 		IrradianceEntity();
 		~IrradianceEntity();
@@ -160,7 +159,7 @@ namespace GTR {
 		std::vector<LightEntity*> lights;
 
 		IrradianceEntity* irradianceEnt;
-		std::vector<sReflectionProbe*> reflection_probes;
+		std::vector<reflectionProbeEntity*> reflectionProbes;
 
 		bool phong;
 

@@ -16,7 +16,8 @@ namespace GTR {
 		LIGHT_MULTI,
 		LIGHT_SINGLE,
 		GBUFFERS,
-		SHADOWS
+		SHADOWS, 
+		REFLECTION
 	};
 
 	enum ePipelineMode {
@@ -109,6 +110,8 @@ namespace GTR {
 		bool show_reflection_probes;
 		Texture* currentReflection;
 		FBO reflection_fbo;
+		bool apply_reflections;
+		bool first_it;
 
 		//bools
 		bool renderingShadows;
@@ -128,7 +131,7 @@ namespace GTR {
 
 		void multipassUniforms(LightEntity* light, Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh, int iteration); //multipass
 
-		void multipassRendering(Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh); //multipass renderer
+		void multipassRendering(Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh, Texture* cubemap); //multipass renderer
 
 		void uploadExtraMap(Shader*& shader, Texture* texture, const char* uniform_name, const char* bool_name, int tex_slot);
 
@@ -148,7 +151,7 @@ namespace GTR {
 		void renderNode(const Matrix44& model, GTR::Node* node, Camera* camera);
 
 		//to render one mesh given its material and transformation matrix
-		void renderMeshWithMaterial(eRenderMode mode, const Matrix44 model, Mesh* mesh, GTR::Material* material, Camera* camera);
+		void renderMeshWithMaterial(eRenderMode mode, const Matrix44 model, Mesh* mesh, GTR::Material* material, Camera* camera, Texture* cubemap);
 
 		void changeRenderMode();
 
@@ -192,7 +195,7 @@ namespace GTR {
 		//reflections
 		void updateReflectionProbes(Scene* scene);
 
-		void captureReflectionProbe(Scene* scene, sReflectionProbe*& probe);
+		void captureReflectionProbe(Scene* scene, reflectionProbeEntity*& probe);
 
 		void renderReflectionProbes(Scene* scene, Camera* camera);
 

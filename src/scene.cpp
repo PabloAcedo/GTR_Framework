@@ -17,31 +17,13 @@ GTR::Scene* GTR::Scene::instance = NULL;
 
 GTR::Scene::Scene()
 {
-	for (int i = 0; i < 5; i++) {
-		//create the probe
-		sReflectionProbe* probe = new sReflectionProbe();
-
-		//set it up
-		probe->pos.set(90, 56, i*40);
-		probe->cubemap = new Texture();
-		probe->cubemap->createCubemap(
-			512, 512,
-			NULL,
-			GL_RGB, GL_UNSIGNED_INT, false);
-
-		//add it to the list
-		reflection_probes.push_back(probe);
-	}
-	
-
 	irradianceEnt = NULL;
 	phong = false;
 	instance = this;
-	
 }
 
-void GTR::Scene::clear()
-{
+void GTR::Scene::clear(){
+
 	for (int i = 0; i < entities.size(); ++i)
 	{
 		BaseEntity* ent = entities[i];
@@ -59,7 +41,6 @@ void GTR::Scene::addEntity(BaseEntity* entity)
 bool GTR::Scene::load(const char* filename)
 {
 	std::string content;
-
 	this->filename = filename;
 	std::cout << " + Reading scene JSON: " << filename << "..." << std::endl;
 
@@ -182,6 +163,8 @@ GTR::BaseEntity* GTR::Scene::createEntity(std::string type)
 		return new GTR::PrefabEntity();
 	else if (type == "LIGHT")
 		return new GTR::LightEntity();
+	else if (type == "Rprobe")
+		return new GTR::reflectionProbeEntity();
 }
 
 void GTR::BaseEntity::renderInMenu()
@@ -543,3 +526,15 @@ bool GTR::IrradianceEntity::read(const char* filename){
 	return true;
 }
 
+/************************************************************************************************************/
+GTR::reflectionProbeEntity::reflectionProbeEntity(){
+	cubemap = new Texture();
+	cubemap->createCubemap(
+		512, 512,
+		NULL,
+		GL_RGB, GL_UNSIGNED_INT, false);
+}
+
+void GTR::reflectionProbeEntity::configure(cJSON* json){
+	Scene::instance->reflectionProbes.push_back(this);
+}

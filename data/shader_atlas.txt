@@ -19,6 +19,7 @@ deferred_ambient quad.vs deferred_ambient.fs
 ssao quad.vs ssao.fs
 tonemapper quad.vs tonemapper.fs
 add_reflections quad.vs add_reflections.fs
+
 //irradiance
 probe basic.vs probe.fs
 irr quad.vs irr.fs
@@ -176,7 +177,8 @@ vec3 interpolateSHs(vec3 local_indices, vec3 factors, vec3 N){
 }
 
 bool inside(vec3 range, vec3 position){
-	if (position.x < 0 || position.y < 0 || position.z < 0 || position.x > range.x || position.y > range.y || position.z > range.z){
+	int factor = -100;
+	if (position.x < factor || position.y < factor || position.z < factor || position.x > range.x || position.y > range.y || position.z > range.z){
 		return false;
 	}
 	return true;
@@ -189,17 +191,14 @@ vec3 Irradiance(vec3 wp, vec3 N){
 	vec3 irr_local_pos = wp - u_irr_start + N * u_irr_normal_dist;
 	
 	float attenuation = 1.0f;
-	if(inside(irr_range, irr_local_pos) == false){
-		//attenuation = 0.5;
+	if(inside(irr_range + vec3(100,0,100), irr_local_pos) == false){
+		attenuation = 0.2;
 	}
 		
-
 	irr_local_pos = clamp( irr_local_pos, vec3(0.0), irr_range -1 );
 
 	//convert from world pos to grid pos
 	vec3 irr_norm_pos = irr_local_pos / u_irr_delta;
-
-	vec3 irradiance = vec3(0.0);
 
 	//floor instead of round
 	vec3 local_indices = floor( irr_norm_pos );
@@ -207,7 +206,7 @@ vec3 Irradiance(vec3 wp, vec3 N){
 	//now we have the interpolation factors
 	vec3 factors = irr_norm_pos - local_indices;
 
-	irradiance += interpolateSHs(local_indices, factors, N);
+	vec3 irradiance = interpolateSHs(local_indices, factors, N);
 
 	return irradiance*attenuation;
 }
@@ -619,10 +618,9 @@ void main()
 		color.xyz += material.emission;
 	}
 
-	//color.xyz = linear_to_gamma(color.xyz); //we will apply this in the tonemapper
-
 	FragColor = color;	
 }
+
 
 \single_pass.fs
 
@@ -974,6 +972,8 @@ uniform vec3 u_camera_position;
 
 #include "realistic_normals"
 
+uniform bool u_blending_mat;
+
 float dither4x4(vec2 position, float brightness)
 {
   int x = int(mod(position.x, 4.0));
@@ -1026,13 +1026,10 @@ void main()
 	if(color.a < u_alpha_cutoff)
 		discard;
 
-	/*if(dither4x4(gl_FragCoord.xy, color.a) == 0.0)
-		discard;*/
-
-	FragColor = color;
 	NormalColor = vec4(N*0.5 + vec3(0.5),1.0);
 	OMR = texture( u_omr, v_uv );
 	EmissiveColor = texture( u_emissive, v_uv );
+	FragColor = color;
 
 }
 
@@ -1098,20 +1095,19 @@ void main()
 			FragColor = vec4(vec3(0.0),1.0);
 			return;
 		}
+		if(u_ilum_mode == 0){
+
+			total_light += computePhong(N,world_pos);
+
+		}else if(u_ilum_mode == 1){
+			sLVectors vectors = set_vectors(uv, N, u_camera_position, world_pos);
+			vec3 PBR = computePBR(vectors, world_pos, material.roughness, material.F0, material.Cdiffuse);
+			total_light += PBR;
+		}
 	}
-	if(u_ilum_mode == 0){
-
-		total_light += computePhong(N,world_pos);
-
-	}else if(u_ilum_mode == 1){
-		sLVectors vectors = set_vectors(uv, N, u_camera_position, world_pos);
-		vec3 PBR = computePBR(vectors, world_pos, material.roughness, material.F0, material.Cdiffuse);
-		total_light += PBR;
-	}
-
 	color.xyz *= total_light;
 
-	//color.xyz = linear_to_gamma(color.xyz); //we will apply this in the tonemapper
+
 	if(u_iteration == 0){
 		if(u_apply_irradiance){
 			color.xyz += texture(u_irradiance, uv).xyz*0.5;
@@ -1426,11 +1422,16 @@ uniform sampler2D u_texture;
 uniform sampler2D u_depth_texture;
 uniform sampler2D u_normal_texture;
 uniform sampler2D u_omr;
-uniform samplerCube u_environment_texture;
 uniform mat4 u_inverse_viewprojection;
 uniform vec2 u_iRes;
 uniform vec3 u_camera_position;
 
+
+uniform samplerCube u_environment_texture1;
+uniform samplerCube u_environment_texture2;
+uniform samplerCube u_environment_texture3;
+uniform samplerCube u_environment_texture4;
+uniform vec3 u_probes_positions[4];
 
 out vec4 FragColor;
 
@@ -1460,8 +1461,41 @@ void main()
 	vec3 V = world_pos - u_camera_position;
 	vec3 R = reflect(V,N);
 	
-	vec3 baseColor = texture( u_texture, uv ).xyz;
-	vec3 reflection = textureLod(u_environment_texture, R, roughness*5.0).xyz;
+	vec3 reflection = vec3(1.0,0.0,0.0);
+	
+	float aux_dist = 1000000.0;
+	for(int i = 0; i < 4; i++){
+		float dist = distance(world_pos, u_probes_positions[i]);
+		if(dist < aux_dist){
+			aux_dist = dist;
+			if(i == 0)
+				reflection = textureLod(u_environment_texture1, R, roughness*5.0).xyz;
+			else if(i == 1)
+				reflection = textureLod(u_environment_texture2, R, roughness*5.0).xyz;
+			else if(i == 2)
+				reflection = textureLod(u_environment_texture3, R, roughness*5.0).xyz;
+			else if(i == 3)
+				reflection = textureLod(u_environment_texture4, R, roughness*5.0).xyz;
+		}
+	}
 
+	vec3 baseColor = texture( u_texture, uv ).xyz;
+	reflection *= baseColor;
 	FragColor = vec4( reflection, metalness);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

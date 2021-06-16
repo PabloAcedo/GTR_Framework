@@ -56,6 +56,37 @@
 			"scale": [ 0.8, 0.8, 0.8 ]
 		},
 		{
+			"name": "Reflection Probe1",
+			"type": "Rprobe",
+			"position": [ 208, 249, 61 ]
+		},
+		{
+			"name": "Reflection Probe2",
+			"type": "Rprobe",
+			"position": [ 474, 209, 67 ]
+		},
+		{
+			"name": "Reflection Probe3",
+			"type": "Rprobe",
+			"position": [ 80, 50, 64]
+		},
+		{
+			"name": "Reflection Probe4",
+			"type": "Rprobe",
+			"position":  [ -179, 50, 59 ]
+		},
+		{
+			"name": "fake",
+			"type": "LIGHT",
+			"position": [ 150, 300, 50 ],
+			"light_color": [ 0, 0, 0 ],
+			"light_type": "directional",
+			"intensity": 1.5,
+			"area_size": 1500,
+			"max_dist": 1000,
+			"target": [ -80, 0, -50 ]
+		},
+		{
 			"name": "moonlight",
 			"type": "LIGHT",
 			"position": [ 150, 300, 50 ],

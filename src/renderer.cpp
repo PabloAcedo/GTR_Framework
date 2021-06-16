@@ -86,6 +86,8 @@ Renderer::Renderer() {
 	showProbesGrid = false;
 	apply_irr = false;
 	currentReflection = NULL;
+	apply_reflections = true;
+	first_it = true;
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
@@ -141,7 +143,6 @@ void Renderer::renderSkybox(Texture* skybox, Camera* camera, bool isforward) {
 	glEnable(GL_DEPTH_TEST);
 }
 
-
 void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 {
 	collectRenderCalls(scene, camera);
@@ -170,16 +171,17 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 		
 	}
 	else if (pipeline_mode == DEFERRED) { 
-		//renderCalls.insert(renderCalls.end(), renderCalls_Blending.begin(), renderCalls_Blending.end());
+		//std::vector<RenderCall*> aux_rendercalls = renderCalls;
+		//aux_rendercalls.insert(aux_rendercalls.end(), renderCalls_Blending.begin(), renderCalls_Blending.end());
 		renderDeferred(scene, renderCalls, camera);
 	}
+
 }
 
 void Renderer::renderForward(Scene* scene, std::vector<RenderCall*>& rc, Camera* camera) {
 	//render
 	for (int i = 0; i < rc.size(); i++) {
-		currentReflection = rc[i]->reflection;
-		renderMeshWithMaterial(render_mode,rc[i]->model, rc[i]->mesh, rc[i]->material, camera);
+		renderMeshWithMaterial(render_mode,rc[i]->model, rc[i]->mesh, rc[i]->material, camera, rc[i]->reflection);
 	}
 	glDisable(GL_BLEND);
 	glDepthFunc(GL_LESS);
@@ -196,9 +198,9 @@ void Renderer::renderPrefab(const Matrix44& model, GTR::Prefab* prefab, Camera* 
 
 void setNearestReflectionProbe(BoundingBox worldBB, RenderCall*& rc) {
 	float aux_dist = 1000.0 * 1000.0;
-	for (int i = 0; i < Scene::instance->reflection_probes.size(); i++) {
-		sReflectionProbe* probe = Scene::instance->reflection_probes[i];
-		float distance = worldBB.center.distance(probe->pos);
+	for (int i = 0; i < Scene::instance->reflectionProbes.size(); i++) {
+		reflectionProbeEntity* probe = Scene::instance->reflectionProbes[i];
+		float distance = worldBB.center.distance(probe->model.getTranslation());
 		if (distance < aux_dist) {
 			rc->reflection = probe->cubemap;
 			aux_dist = distance;
@@ -229,7 +231,9 @@ void Renderer::renderNode(const Matrix44& prefab_model, GTR::Node* node, Camera*
 			
 			if(camera)	//Agafar nomes els rc que veu la camera... COMPROVAR
 				rc->distance2Cam = world_bounding.center.distance(camera->eye);
-			
+
+			setNearestReflectionProbe(world_bounding, rc);
+
 			if (node->material->alpha_mode == BLEND && !renderingShadows) {
 				renderCalls_Blending.push_back(rc);
 			}
@@ -237,6 +241,7 @@ void Renderer::renderNode(const Matrix44& prefab_model, GTR::Node* node, Camera*
 				renderCalls.push_back(rc);
 			}
 		}
+
 	}
 
 	//iterate recursively with children
@@ -245,7 +250,7 @@ void Renderer::renderNode(const Matrix44& prefab_model, GTR::Node* node, Camera*
 }
 
 //renders a mesh given its transform and material
-void Renderer::renderMeshWithMaterial(eRenderMode mode, const Matrix44 model, Mesh* mesh, GTR::Material* material, Camera* camera)
+void Renderer::renderMeshWithMaterial(eRenderMode mode, const Matrix44 model, Mesh* mesh, GTR::Material* material, Camera* camera, Texture* cubemap = NULL)
 {
 	//in case there is nothing to do
 	if (!mesh || !mesh->getNumVertices() || !material )
@@ -285,7 +290,7 @@ void Renderer::renderMeshWithMaterial(eRenderMode mode, const Matrix44 model, Me
 			if (shader == NULL)
 				return;
 			shader->enable();
-			multipassRendering(shader, model, material, camera, mesh);
+			multipassRendering(shader, model, material, camera, mesh, cubemap);
 			//disable shader
 			shader->disable();
 		}
@@ -308,6 +313,11 @@ void Renderer::renderMeshWithMaterial(eRenderMode mode, const Matrix44 model, Me
 			texture = material->normal_texture.texture;
 			uploadExtraMap(shader, texture, "u_normal_map", "u_has_normal", 3);
 			commonUniforms(shader, model, material, camera, mesh, false);
+			bool blending_mat = false;
+			if (material->alpha_mode == GTR::eAlphaMode::BLEND) {
+				blending_mat = true;
+			}
+			shader->setUniform("u_blending_mat", blending_mat);
 			shader->disable();
 		}
 	}
@@ -402,7 +412,7 @@ void Renderer::multipassUniforms(GTR::LightEntity* light, Shader*& shader, const
 	mesh->render(GL_TRIANGLES);
 }
 
-void Renderer::multipassRendering(Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh) {
+void Renderer::multipassRendering(Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh, Texture* cubemap) {
 
 	glDepthFunc(GL_LEQUAL);
 
@@ -635,16 +645,17 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	scene_fbo.unbind();
 
 	renderFinal(scene_fbo.color_textures[0]);
-
-	glDisable(GL_BLEND);
-	glDisable(GL_DEPTH_TEST);
-	addReflectionsToScene(camera);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-	renderFinal(reflection_fbo.color_textures[0]);
-	glDisable(GL_BLEND);
-	glDisable(GL_DEPTH_TEST);
-
+	if (apply_reflections) {
+		glDisable(GL_BLEND);
+		glDisable(GL_DEPTH_TEST);
+		addReflectionsToScene(camera);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		renderFinal(reflection_fbo.color_textures[0]);
+		glDisable(GL_BLEND);
+		glDisable(GL_DEPTH_TEST);
+	}
+	
 	if(showGbuffers)
 		showgbuffers(camera);
 
@@ -797,8 +808,9 @@ void GTR::Renderer::renderInMenu(){
 	changeRenderMode();
 	ImGui::Checkbox("Update Shadows", &cast_shadows);
 	ImGui::Checkbox("Show reflection probes", &show_reflection_probes);
+	ImGui::Checkbox("Apply reflections", &apply_reflections);
 	if (current_mode_pipeline == GTR::ePipelineMode::DEFERRED) {
-		//apply_irr
+		//apply_reflections
 		ImGui::Checkbox("Show gbuffers", &showGbuffers);
 		ImGui::Checkbox("Apply irradiance", &apply_irr);
 		ImGui::Checkbox("Show irradianceTex", &show_irr_tex);
@@ -959,12 +971,12 @@ void GTR::Renderer::irradianceMap(Texture* depth_buffer, Texture* normal_buffer,
 }
 
 void GTR::Renderer::updateReflectionProbes(Scene* scene){
-	for (int i = 0; i < scene->reflection_probes.size(); i++) {
-		captureReflectionProbe(scene, scene->reflection_probes[i]);
+	for (int i = 0; i < scene->reflectionProbes.size(); i++) {
+		captureReflectionProbe(scene, scene->reflectionProbes[i]);
 	}
 }
 
-void GTR::Renderer::captureReflectionProbe(Scene* scene, sReflectionProbe*& probe){
+void GTR::Renderer::captureReflectionProbe(Scene* scene, reflectionProbeEntity*& probe) {
 	Camera* cam = new Camera();
 	//set the fov to 90 and the aspect to 1
 	cam->setPerspective(90, 1, 0.1, 1000);
@@ -983,8 +995,8 @@ void GTR::Renderer::captureReflectionProbe(Scene* scene, sReflectionProbe*& prob
 		irr_fbo->bind();
 
 		//render view
-		Vector3 eye = probe->pos;
-		Vector3 center = probe->pos + cubemapFaceNormals[i][2];
+		Vector3 eye = probe->model.getTranslation();
+		Vector3 center = probe->model.getTranslation() + cubemapFaceNormals[i][2];
 		Vector3 up = cubemapFaceNormals[i][1];
 		cam->lookAt(eye, center, up);
 		cam->enable();
@@ -1012,11 +1024,10 @@ void GTR::Renderer::renderReflectionProbes(Scene* scene, Camera* camera){
 	shader->enable();
 	shader->setUniform("u_viewprojection",camera->viewprojection_matrix);
 	shader->setUniform("u_camera_position", camera->eye);
-	for (int i = 0; i < scene->reflection_probes.size(); i++) {
+	for (int i = 0; i < scene->reflectionProbes.size(); i++) {
 
-		sReflectionProbe* probe = scene->reflection_probes[i];
-		Matrix44 model;
-		model.setTranslation(probe->pos.x, probe->pos.y, probe->pos.z);
+		reflectionProbeEntity* probe = scene->reflectionProbes[i];
+		Matrix44 model = probe->model;
 		int size = 10;
 		model.scale(size, size, size);
 		shader->setUniform("u_model", model);
@@ -1029,15 +1040,9 @@ void GTR::Renderer::renderReflectionProbes(Scene* scene, Camera* camera){
 
 void GTR::Renderer::addReflectionsToScene(Camera* camera){
 	Texture* cubemap = NULL;
-	float aux_dist = 1000.0 * 1000.0;
-	for (int i = 0; i < Scene::instance->reflection_probes.size(); i++) {
-		sReflectionProbe* probe = Scene::instance->reflection_probes[i];
-		float distance = camera->eye.distance(probe->pos);
-		if (distance < aux_dist) {
-			//Scene::instance->environment;
-			cubemap = probe->cubemap;
-			aux_dist = distance;
-		}
+	Vector3 positions[4];
+	for (int i = 0; i < Scene::instance->reflectionProbes.size(); i++) {
+		positions[i] = Scene::instance->reflectionProbes[i]->model.getTranslation();
 	}
 	Shader* shader = Shader::Get("add_reflections");
 	if (shader == NULL) return;
@@ -1048,13 +1053,27 @@ void GTR::Renderer::addReflectionsToScene(Camera* camera){
 	glClear(GL_COLOR_BUFFER_BIT);
 	checkGLErrors();
 	shader->enable();
-	shader->setUniform("u_texture", scene_fbo.color_textures[0],0);
+
+	shader->setUniform3Array("u_probes_positions", (float*)positions, 4);
+
+	shader->setUniform("u_texture", fbo_gbuffers.color_textures[0],0);
 	shader->setUniform("u_normal_texture", fbo_gbuffers.color_textures[1], 1);
 	shader->setUniform("u_depth_texture", fbo_gbuffers.depth_texture, 2);
 	shader->setUniform("u_omr", fbo_gbuffers.color_textures[2], 3);
 	shader->setUniform("u_camera_position", camera->eye);
-	if (cubemap)
-		shader->setTexture("u_environment_texture", cubemap, 9);
+
+	cubemap = Scene::instance->reflectionProbes[0]->cubemap;
+	shader->setTexture("u_environment_texture1", cubemap, 4);
+
+	cubemap = Scene::instance->reflectionProbes[1]->cubemap;
+	shader->setTexture("u_environment_texture2", cubemap, 4);
+
+	cubemap = Scene::instance->reflectionProbes[2]->cubemap;
+	shader->setTexture("u_environment_texture3", cubemap, 6);
+
+	cubemap = Scene::instance->reflectionProbes[3]->cubemap;
+	shader->setTexture("u_environment_texture4", cubemap, 7);
+
 	int width = Application::instance->window_width;
 	int height = Application::instance->window_height;
 	shader->setUniform("u_iRes", Vector2(1.0 / (float)width, 1.0 / (float)height));
