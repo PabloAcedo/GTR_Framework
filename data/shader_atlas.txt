@@ -1082,11 +1082,22 @@ void main()
 	vec3 total_light = vec3(0.0);
 
 	if(u_iteration == 0){
+		if(depth >= 1.0)
+		{
+			FragColor = material.albedo;
+			return;
+		}
 		total_light += gamma_to_linear(u_light_ambient);
 		if(u_apply_ssao){
 			material.ao = texture( u_ssao, uv ).x;
 		}
 		total_light *= material.ao;
+	}else{
+		if(depth >= 1.0)
+		{
+			FragColor = vec4(vec3(0.0),1.0);
+			return;
+		}
 	}
 	if(u_ilum_mode == 0){
 

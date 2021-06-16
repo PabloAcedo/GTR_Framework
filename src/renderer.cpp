@@ -621,11 +621,6 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	if (scene->irradianceEnt == NULL) {
 		scene->irradianceEnt = new IrradianceEntity();
 	} 
-
-	if (irr_map_fbo.color_textures[0] && show_irr_tex) {
-		irr_map_fbo.color_textures[0]->toViewport();
-	}
-
 	//temporal test probes
 	if (showProbesGrid) {
 		for (int i = 0; i < scene->irradianceEnt->probes.size(); i++) {
@@ -655,6 +650,10 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	if (showSSAO) {
 		ao_map->toViewport();
+	}
+
+	if (irr_map_fbo.color_textures[0] && show_irr_tex) {
+		irr_map_fbo.color_textures[0]->toViewport();
 	}
 
 }
