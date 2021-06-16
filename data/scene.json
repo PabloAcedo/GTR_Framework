@@ -73,7 +73,7 @@
 			"light_color":[1,0.02,0.0],
 			"light_type": "point",
 			"max_dist": 70,
-			"intensity":5
+			"intensity":2
 		},
 		{
 			"name":"pointlight2",
@@ -82,7 +82,7 @@
 			"light_color":[1,0.02,0.0],
 			"light_type": "point",
 			"max_dist": 70,
-			"intensity":5
+			"intensity":2
 		},
 		{
 			"name":"spot",

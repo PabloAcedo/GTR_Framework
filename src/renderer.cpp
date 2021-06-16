@@ -165,7 +165,7 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 			renderReflectionProbes(scene, camera);
 		if (!renderingShadows) {
 			scene_fbo.unbind();
-			renderFinal();
+			renderFinal(scene_fbo.color_textures[0]);
 		}
 		
 	}
@@ -357,7 +357,8 @@ void Renderer::uploadExtraMap(Shader*& shader, Texture* texture, const char* uni
 	}
 	else {
 		if (pipeline_mode == GTR::ePipelineMode::DEFERRED) {
-			texture = Texture::getWhiteTexture();
+			texture = Texture::Get("data/textures/omr_aux.png");
+			
 			if (uniform_name == "u_emissive")
 				texture = Texture::getBlackTexture();
 
@@ -638,13 +639,16 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	scene_fbo.unbind();
 
-	//glEnable(GL_BLEND);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	addReflectionsToScene(camera);
-	glDisable(GL_BLEND);
+	renderFinal(scene_fbo.color_textures[0]);
 
-	reflection_fbo.color_textures[0]->toViewport();
-	//renderFinal();
+	glDisable(GL_BLEND);
+	glDisable(GL_DEPTH_TEST);
+	addReflectionsToScene(camera);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	renderFinal(reflection_fbo.color_textures[0]);
+	glDisable(GL_BLEND);
+	glDisable(GL_DEPTH_TEST);
 
 	if(showGbuffers)
 		showgbuffers(camera);
@@ -824,14 +828,14 @@ void GTR::Renderer::renderInMenu(){
 	}
 }
 
-void GTR::Renderer::renderFinal(){
+void GTR::Renderer::renderFinal(Texture* tex){
 	Shader* shader = Shader::Get("tonemapper");
 	shader->enable();
 	shader->setUniform("u_average_lum", avg_lum);
 	shader->setUniform("u_lumwhite2", lum_white * lum_white);
 	shader->setUniform("u_scale", scale_tonemap); 
 	shader->setUniform("u_apply", apply_tonemap);
-	reflection_fbo.color_textures[0]->toViewport(shader);
+	tex->toViewport(shader);
 	shader->disable();
 }
 
@@ -1024,31 +1028,14 @@ void GTR::Renderer::renderReflectionProbes(Scene* scene, Camera* camera){
 	glDisable(GL_CULL_FACE);
 }
 
-/*void setNearestReflectionProbe(BoundingBox worldBB, RenderCall*& rc) {
-	float aux_dist = 1000.0 * 1000.0;
-	for (int i = 0; i < Scene::instance->reflection_probes.size(); i++) {
-		sReflectionProbe* probe = Scene::instance->reflection_probes[i];
-		float distance = worldBB.center.distance(probe->pos);
-		if (distance < aux_dist) {
-			rc->reflection = probe->cubemap;
-			aux_dist = distance;
-		}
-	}
-}*/
-
 void GTR::Renderer::addReflectionsToScene(Camera* camera){
-	//Texture* reflectionsTex[5]; 
-	//Vector3 positions[5];
-	/*for (int i = 0; i < Scene::instance->reflection_probes.size(); i++) {
-		reflectionsTex[i] = Scene::instance->reflection_probes[i]->cubemap;
-		positions[i] = Scene::instance->reflection_probes[i]->pos;
-	}*/
 	Texture* cubemap = NULL;
 	float aux_dist = 1000.0 * 1000.0;
 	for (int i = 0; i < Scene::instance->reflection_probes.size(); i++) {
 		sReflectionProbe* probe = Scene::instance->reflection_probes[i];
 		float distance = camera->eye.distance(probe->pos);
 		if (distance < aux_dist) {
+			//Scene::instance->environment;
 			cubemap = probe->cubemap;
 			aux_dist = distance;
 		}
@@ -1058,13 +1045,16 @@ void GTR::Renderer::addReflectionsToScene(Camera* camera){
 	Mesh* mesh = Mesh::getQuad();
 	updateFBO(reflection_fbo, 1, false);
 	reflection_fbo.bind();
+	glClearColor(0, 0, 0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT);
+	checkGLErrors();
 	shader->enable();
 	shader->setUniform("u_texture", scene_fbo.color_textures[0],0);
 	shader->setUniform("u_normal_texture", fbo_gbuffers.color_textures[1], 1);
 	shader->setUniform("u_depth_texture", fbo_gbuffers.depth_texture, 2);
 	shader->setUniform("u_omr", fbo_gbuffers.color_textures[2], 3);
 	shader->setUniform("u_camera_position", camera->eye);
-	if(cubemap)
+	if (cubemap)
 		shader->setTexture("u_environment_texture", cubemap, 9);
 	int width = Application::instance->window_width;
 	int height = Application::instance->window_height;
