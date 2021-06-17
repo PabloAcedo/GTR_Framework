@@ -221,6 +221,7 @@ GTR::LightEntity::LightEntity() {
 	this->bias = 0.001;
 	this->show_shadowmap = false;
 	this->area_size = 1024.0;
+	useful = false;
 }
 
 GTR::LightEntity::~LightEntity() {
@@ -232,6 +233,9 @@ void GTR::LightEntity::setColor(vec3 color) {
 }
 
 void GTR::LightEntity::renderInMenu() {
+	if (useful == false)
+		return;
+
 	BaseEntity::renderInMenu();
 #ifndef SKIP_IMGUI
 	if (visible) {
@@ -284,6 +288,14 @@ void GTR::LightEntity::configure(cJSON* json) {
 	}
 	if (cJSON_GetObjectItem(json, "area_size")) {
 		area_size = cJSON_GetObjectItem(json, "area_size")->valuedouble;
+	}
+	if (cJSON_GetObjectItem(json, "useful")) {
+		const char* str = cJSON_GetObjectItem(json, "useful")->valuestring;
+		if (str == "no")
+			useful = false;
+	}
+	else {
+		useful = true;
 	}
 
 	if (Scene::instance != NULL) {

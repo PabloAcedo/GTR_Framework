@@ -574,6 +574,10 @@ uniform bool u_has_shadows;
 
 uniform int u_ilum_mode;
 
+uniform int u_max_iter;
+
+uniform samplerCube u_environment_texture;
+
 out vec4 FragColor;
 
 void main()
@@ -617,10 +621,15 @@ void main()
 	if(u_iteration == 0 && u_has_emissive){
 		color.xyz += material.emission;
 	}
+	vec3 R = reflect(-V,N);
+	if(u_iteration == u_max_iter){
+
+		color.xyz = material.albedo.xyz*textureLod(u_environment_texture, R, material.roughness*5.0).xyz*0.6;
+		color.w = material.metalness;
+	}
 
 	FragColor = color;	
 }
-
 
 \single_pass.fs
 
@@ -820,7 +829,7 @@ out vec4 FragColor;
 void main()
 {
 	vec3 V = v_world_position - u_camera_position;
-	vec3 skybox_color = texture( u_texture, V ).xyz;
+	vec3 skybox_color = texture( u_texture, V , 0.0).xyz;
 
 	if(u_is_forward)
 		skybox_color = gamma_to_linear(skybox_color);

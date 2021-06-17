@@ -76,6 +76,7 @@ namespace GTR {
 		float cone_angle;
 		float area_size;
 		float spotExp;
+		bool useful;
 
 		//shadows
 		FBO* fbo = NULL;

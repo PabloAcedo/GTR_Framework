@@ -73,7 +73,7 @@ Renderer::Renderer() {
 	gamma = 2.2;
 	scale_tonemap = 1.0;
 	apply_tonemap = true;
-	apply_ssao = false;
+	apply_ssao = true;
 	show_reflection_probes = false;
 
 	//temporal probe test
@@ -84,7 +84,7 @@ Renderer::Renderer() {
 	irr_fbo = NULL;
 	show_irr_tex = false;
 	showProbesGrid = false;
-	apply_irr = false;
+	apply_irr = true;
 	currentReflection = NULL;
 	apply_reflections = true;
 	first_it = true;
@@ -379,7 +379,7 @@ void Renderer::uploadExtraMap(Shader*& shader, Texture* texture, const char* uni
 	
 }
 
-void Renderer::multipassUniforms(GTR::LightEntity* light, Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh, int iteration) {
+void Renderer::multipassUniforms(GTR::LightEntity* light, Shader*& shader, const Matrix44 model, GTR::Material* material, Camera* camera, Mesh* mesh, int iteration, Texture* cubemap) {
 
 	light->lightVisible();
 
@@ -390,6 +390,11 @@ void Renderer::multipassUniforms(GTR::LightEntity* light, Shader*& shader, const
 	texture = material->emissive_texture.texture;
 	uploadExtraMap(shader, texture, "u_emissive", "u_has_emissive", 1);
 	shader->setUniform("u_iteration", iteration);
+
+	int max_iter = Scene::instance->lights.size() - 1;
+	shader->setUniform("u_max_iter", max_iter);
+
+	shader->setTexture("u_environment_texture", cubemap, 9);
 
 	texture = material->normal_texture.texture;
 	uploadExtraMap(shader, texture, "u_normal_map", "u_has_normal", 2);
@@ -427,10 +432,10 @@ void Renderer::multipassRendering(Shader*& shader, const Matrix44 model, GTR::Ma
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 			glDepthFunc(GL_LEQUAL);
 		}
-		if (i == 0 && material->alpha_mode == GTR::eAlphaMode::BLEND) {
+		if (i == 0 && material->alpha_mode == GTR::eAlphaMode::BLEND && i!= Scene::instance->lights.size()-1) {
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		}
-		multipassUniforms(Scene::instance->lights[i], shader, model, material, camera, mesh, i);
+		multipassUniforms(Scene::instance->lights[i], shader, model, material, camera, mesh, i, cubemap);
 	}
 	glDisable(GL_BLEND);
 }

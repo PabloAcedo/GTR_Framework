@@ -20,6 +20,14 @@
 			"angle":-45
 		},
 		{
+			"name":"Mirror",
+			"type":"PREFAB",
+			"filename":"prefabs/ornate_mirror/scene.gltf",
+			"position":[ 169, 80, -14],
+			"angle":90,
+			"scale":[60,60,1]
+		},
+		{
 			"name":"car2",
 			"type":"PREFAB",
 			"filename":"prefabs/gmc/scene.gltf",
@@ -76,7 +84,7 @@
 			"position":  [ -179, 50, 59 ]
 		},
 		{
-			"name": "fake",
+			"name": "aux1",
 			"type": "LIGHT",
 			"position": [ 150, 300, 50 ],
 			"light_color": [ 0, 0, 0 ],
@@ -84,7 +92,8 @@
 			"intensity": 1.5,
 			"area_size": 1500,
 			"max_dist": 1000,
-			"target": [ -80, 0, -50 ]
+			"target": [ -80, 0, -50 ],
+			"useful":"no"
 		},
 		{
 			"name": "moonlight",
@@ -126,7 +135,18 @@
 			"intensity":5,
 			"cone_angle":45.0,
 			"spot_exp": 60.0
+		},
+		{
+			"name": "aux2",
+			"type": "LIGHT",
+			"position": [ 150, 300, 50 ],
+			"light_color": [ 0, 0, 0 ],
+			"light_type": "directional",
+			"intensity": 1.5,
+			"area_size": 1500,
+			"max_dist": 1000,
+			"target": [ -80, 0, -50 ],
+			"useful":"no"
 		}
-		
 	]
 }
