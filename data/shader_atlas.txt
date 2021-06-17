@@ -598,7 +598,7 @@ void main()
 	
 	//light equation vectors
 	vec3 N = normalize(v_normal);
-	vec3 V = normalize(u_camera_position - v_world_position); 
+	vec3 V = normalize(v_world_position-u_camera_position); 
 	
 	if(u_has_normal){
 		vec3 np = texture( u_normal_map, v_uv ).xyz;
@@ -621,7 +621,7 @@ void main()
 	if(u_iteration == 0 && u_has_emissive){
 		color.xyz += material.emission;
 	}
-	vec3 R = reflect(-V,N);
+	vec3 R = reflect(V,N);
 	if(u_iteration == u_max_iter){
 
 		color.xyz = material.albedo.xyz*textureLod(u_environment_texture, R, material.roughness*5.0).xyz*0.6;
@@ -1027,7 +1027,7 @@ void main()
 	vec3 N = normalize(v_normal);
 
 	if(u_has_normal){
-		vec3 V = normalize(u_camera_position - v_world_position);
+		vec3 V = normalize(v_world_position-u_camera_position);
 		vec3 np = texture( u_normal_map, v_uv ).xyz;
 		N = perturbNormal(N, V, v_uv, np);
 	}
