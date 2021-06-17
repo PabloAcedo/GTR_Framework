@@ -19,6 +19,7 @@ deferred_ambient quad.vs deferred_ambient.fs
 ssao quad.vs ssao.fs
 tonemapper quad.vs tonemapper.fs
 add_reflections quad.vs add_reflections.fs
+AAFX quad.vs AAFX.fs
 
 //irradiance
 probe basic.vs probe.fs
@@ -178,7 +179,7 @@ vec3 interpolateSHs(vec3 local_indices, vec3 factors, vec3 N){
 
 bool inside(vec3 range, vec3 position){
 	int factor = 0;
-	if (position.x < factor || position.y < factor || position.z < factor || position.x > range.x || position.y > range.y || position.z > range.z){
+	if (position.x < factor || position.y < -20 || position.z < factor || position.x > range.x || position.y > range.y || position.z > range.z){
 		return false;
 	}
 	return true;
@@ -1239,7 +1240,7 @@ uniform bool u_apply;
 out vec4 FragColor;
 
 void main() {
-	vec4 color = texture2D( u_texture, v_uv );
+	vec4 color = texture2D(u_texture, v_uv);
 	vec3 rgb = color.xyz;
 	if(u_apply){
 		float lum = dot(rgb, vec3(0.2126, 0.7152, 0.0722));
@@ -1492,8 +1493,56 @@ void main()
 	FragColor = vec4( reflection, metalness);
 }
 
+\AAFX.fs
+#version 330 core
 
+uniform sampler2D u_texture;
+uniform vec2 u_viewportSize;
+uniform vec2 u_iViewportSize;
+#define FXAA_REDUCE_MIN  (1.0/ 128.0)
+#define FXAA_REDUCE_MUL  (1.0 / 8.0)
+#define FXAA_SPAN_MAX    8.0
 
+/* from mitsuhiko/webgl-meincraft based on the code on geeks3d.com */
+/* fragCoord MUST BE IN PIXELS */
+
+vec4 applyFXAA(sampler2D tex, vec2 fragCoord){
+		vec4 color = vec4(0.0);
+		/*vec2 u_iViewportSize = vec2(1.0 / u_viewportSize.x, 1.0 / u_viewportSize.y);*/
+		vec3 rgbNW = texture2D(tex, (fragCoord + vec2(-1.0, -1.0)) * u_iViewportSize).xyz;
+		vec3 rgbNE = texture2D(tex, (fragCoord + vec2(1.0, -1.0)) * u_iViewportSize).xyz;
+		vec3 rgbSW = texture2D(tex, (fragCoord + vec2(-1.0, 1.0)) * u_iViewportSize).xyz;
+		vec3 rgbSE = texture2D(tex, (fragCoord + vec2(1.0, 1.0)) * u_iViewportSize).xyz;
+		vec3 rgbM  = texture2D(tex, fragCoord  * u_iViewportSize).xyz;
+		vec3 luma = vec3(0.299, 0.587, 0.114);
+		float lumaNW = dot(rgbNW, luma);
+		float lumaNE = dot(rgbNE, luma);
+		float lumaSW = dot(rgbSW, luma);
+		float lumaSE = dot(rgbSE, luma);
+		float lumaM  = dot(rgbM,  luma);
+		float lumaMin = min(lumaM, min(min(lumaNW, lumaNE), min(lumaSW, lumaSE)));
+		float lumaMax = max(lumaM, max(max(lumaNW, lumaNE), max(lumaSW, lumaSE)));
+		vec2 dir;
+		dir.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));
+		dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));
+		float dirReduce = max((lumaNW + lumaNE + lumaSW + lumaSE) * (0.25 * FXAA_REDUCE_MUL), FXAA_REDUCE_MIN);
+		float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
+		dir = min(vec2(FXAA_SPAN_MAX, FXAA_SPAN_MAX), max(vec2(-FXAA_SPAN_MAX, -FXAA_SPAN_MAX), dir * rcpDirMin)) * u_iViewportSize;
+		vec3 rgbA = 0.5 * (texture2D(tex, fragCoord * u_iViewportSize + dir * (1.0 / 3.0 - 0.5)).xyz + texture2D(tex, fragCoord * u_iViewportSize + dir * (2.0 / 3.0 - 0.5)).xyz);
+		vec3 rgbB = rgbA * 0.5 + 0.25 * (texture2D(tex, fragCoord * u_iViewportSize + dir * -0.5).xyz + texture2D(tex, fragCoord * u_iViewportSize + dir * 0.5).xyz);
+		//return vec4(rgbA,1.0);
+		float lumaB = dot(rgbB, luma);
+		if ((lumaB < lumaMin) || (lumaB > lumaMax))
+			color = vec4(rgbA, 1.0);
+		else
+			color = vec4(rgbB, 1.0);
+		return color;
+}
+
+out vec4 FragColor;
+void main(){
+	FragColor = applyFXAA(u_texture,gl_FragCoord.xy);
+}
 
 
 

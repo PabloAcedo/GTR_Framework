@@ -88,6 +88,7 @@ Renderer::Renderer() {
 	currentReflection = NULL;
 	apply_reflections = true;
 	first_it = true;
+	applyAA = true;
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
@@ -167,6 +168,10 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 		if (!renderingShadows) {
 			scene_fbo.unbind();
 			renderFinal(scene_fbo.color_textures[0]);
+			if (applyAA)
+				AAFX(final_render_fbo.color_textures[0]);
+			else
+				final_render_fbo.color_textures[0]->toViewport();
 		}
 		
 	}
@@ -660,7 +665,12 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 		glDisable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
 	}
-	
+
+	if (applyAA)
+		AAFX(final_render_fbo.color_textures[0]);
+	else
+		final_render_fbo.color_textures[0]->toViewport();
+
 	if(showGbuffers)
 		showgbuffers(camera);
 
@@ -806,6 +816,8 @@ void GTR::Renderer::renderAmbient(Camera* camera){
 /********************************************************************************************************************/
 void GTR::Renderer::renderInMenu(){
 	ImGui::Combo("Pipeline Mode", &current_mode_pipeline, optionsTextPipeline, IM_ARRAYSIZE(optionsTextPipeline));
+	//applyAA
+	ImGui::Checkbox("Anti Aliasing", &applyAA);
 	if (current_mode_pipeline != GTR::ePipelineMode::DEFERRED) {
 		ImGui::Combo("Render Mode", &current_mode, optionsText, IM_ARRAYSIZE(optionsText));
 	}
@@ -846,12 +858,30 @@ void GTR::Renderer::renderInMenu(){
 
 void GTR::Renderer::renderFinal(Texture* tex){
 	Shader* shader = Shader::Get("tonemapper");
+	updateFBO(final_render_fbo, 1, false);
+	final_render_fbo.bind();
 	shader->enable();
+	shader->setUniform("u_texture", tex, 0);
 	shader->setUniform("u_average_lum", avg_lum);
 	shader->setUniform("u_lumwhite2", lum_white * lum_white);
 	shader->setUniform("u_scale", scale_tonemap); 
 	shader->setUniform("u_apply", apply_tonemap);
 	tex->toViewport(shader);
+	shader->disable();
+	final_render_fbo.unbind();
+}
+
+void GTR::Renderer::AAFX(Texture* tex){
+	Shader* shader = Shader::Get("AAFX");
+	//Mesh* quad = Mesh::getQuad();
+	shader->enable();
+	shader->setUniform("u_texture", tex,0);
+	int width = Application::instance->window_width;
+	int height = Application::instance->window_height;
+	shader->setUniform("u_iViewportSize", Vector2(1.0 / (float)width, 1.0 / (float)height));
+	shader->setUniform("u_viewportSize", Vector2((float)width, (float)height));
+	tex->toViewport(shader);
+	//quad->render(GL_TRIANGLES);
 	shader->disable();
 }
 

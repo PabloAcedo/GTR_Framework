@@ -90,6 +90,8 @@ namespace GTR {
 		SSAOFX ssao;
 		Texture* ao_map;
 		bool apply_ssao;
+		FBO final_render_fbo;
+		bool applyAA;
 
 		//tonemap
 		float avg_lum;
@@ -177,7 +179,7 @@ namespace GTR {
 		/**********************************************************************************************/
 		void renderInMenu();
 		void renderFinal(Texture* tex);
-
+		void AAFX(Texture* tex);
 		
 		/**********************************************************************************************/
 		//irradiance
