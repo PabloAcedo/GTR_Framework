@@ -1,59 +1,13 @@
-﻿  renderer.cpp
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cJSON.h(104,1): warning C4099: 'cJSON': type name first seen using 'class' now seen using 'struct'
+﻿  application.cpp
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\scene.h(14,12): warning C4099: 'cJSON': type name first seen using 'struct' now seen using 'class'
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cJSON.h(103): message : see declaration of 'cJSON'
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(25,8): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(26,8): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(71,16): warning C4305: '=': truncation from 'double' to 'float'
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(73,13): warning C4305: '=': truncation from 'double' to 'float'
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(98,20): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(183,20): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(201,20): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(248,20): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(349,10): warning C4244: 'initializing': conversion from 'long' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(425,20): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(483,20): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(507,20): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(581,20): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(641,21): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(682,48): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(682,34): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(682,22): warning C4244: 'argument': conversion from 'double' to 'GLint', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(685,58): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(685,44): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(685,32): warning C4244: 'argument': conversion from 'double' to 'GLint', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(685,19): warning C4244: 'argument': conversion from 'double' to 'GLint', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(688,39): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(688,25): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(691,49): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(691,35): warning C4244: 'argument': conversion from 'double' to 'GLsizei', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(691,19): warning C4244: 'argument': conversion from 'double' to 'GLint', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(741,63): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(741,43): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(768,20): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(791,63): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(791,43): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(826,64): warning C4305: 'argument': truncation from 'double' to 'float'
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(828,75): warning C4305: 'argument': truncation from 'double' to 'float'
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(841,66): warning C4305: 'argument': truncation from 'double' to 'float'
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(895,37): warning C4305: 'argument': truncation from 'double' to 'float'
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(932,20): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(969,63): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(969,43): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(979,20): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(987,38): warning C4305: 'argument': truncation from 'double' to 'float'
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1032,20): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1037,27): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1037,21): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1037,15): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1049,20): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1084,63): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1084,43): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1105,15): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1106,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1107,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1123,21): warning C4305: '=': truncation from 'double' to 'float'
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1164,63): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1164,43): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(137,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(138,20): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(154,55): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(156,55): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(281,20): warning C4018: '<': signed/unsigned mismatch
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(376,36): warning C4244: '*=': conversion from 'double' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(378,35): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
      Creating library ..\..\framework.lib and object ..\..\framework.exp
 LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
   Generating code

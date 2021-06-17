@@ -125,7 +125,10 @@ void Application::render(void)
 
     glDisable(GL_DEPTH_TEST);
     //render anything in the gui after this
-
+	if (renderer->first_it) {
+		renderer->updateReflectionProbes(scene);
+		renderer->first_it = false;
+	}
 	//the swap buffers is done in the main loop after this function
 }
 
