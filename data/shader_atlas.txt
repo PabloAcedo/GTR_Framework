@@ -177,7 +177,7 @@ vec3 interpolateSHs(vec3 local_indices, vec3 factors, vec3 N){
 }
 
 bool inside(vec3 range, vec3 position){
-	int factor = -100;
+	int factor = 0;
 	if (position.x < factor || position.y < factor || position.z < factor || position.x > range.x || position.y > range.y || position.z > range.z){
 		return false;
 	}
@@ -190,12 +190,11 @@ vec3 Irradiance(vec3 wp, vec3 N){
 
 	vec3 irr_local_pos = wp - u_irr_start + N * u_irr_normal_dist;
 	
-	float attenuation = 1.0f;
-	if(inside(irr_range + vec3(100,0,100), irr_local_pos) == false){
-		attenuation = 0.2;
+	if(inside(irr_range-1, irr_local_pos) == false){
+		irr_local_pos = irr_range-1;
 	}
 		
-	irr_local_pos = clamp( irr_local_pos, vec3(0.0), irr_range -1 );
+	//irr_local_pos = clamp( irr_local_pos, vec3(0.0), irr_range -1 );
 
 	//convert from world pos to grid pos
 	vec3 irr_norm_pos = irr_local_pos / u_irr_delta;
@@ -208,7 +207,7 @@ vec3 Irradiance(vec3 wp, vec3 N){
 
 	vec3 irradiance = interpolateSHs(local_indices, factors, N);
 
-	return irradiance*attenuation;
+	return irradiance;
 }
 
 
