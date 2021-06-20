@@ -19,9 +19,8 @@ using namespace GTR;
 //temporal probe test
 sProbe probe;
 
-void updateFBO(FBO& fbo, int textures_num, bool quality) {
+void updateFBO(FBO& fbo, int textures_num, bool quality, int scale) {
 
-	float scale = 1.0;
 	int w = Application::instance->window_width * scale;
 	int h = Application::instance->window_height * scale;
 	if (fbo.fbo_id == 0 || (w != fbo.width) || (h != fbo.height)) {//Initialize fbo
@@ -89,6 +88,8 @@ Renderer::Renderer() {
 	apply_reflections = true;
 	first_it = true;
 	applyAA = true;
+	apply_fog = true;
+	fog_density = 0.003;
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
@@ -150,7 +151,7 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 
 	if (pipeline_mode == FORWARD || renderingShadows) {
 		if (!renderingShadows) {
-			updateFBO(scene_fbo, 1,true);
+			updateFBO(scene_fbo, 1,true, 1.0);
 			scene_fbo.bind();
 		}
 		//set the clear color (the background color)
@@ -571,7 +572,7 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	glDisable(GL_BLEND);
 
-	updateFBO(fbo_gbuffers, 4, false);
+	updateFBO(fbo_gbuffers, 4, false, 1.0);
 	int w = fbo_gbuffers.width; int h = fbo_gbuffers.height;
 
 	//render gbuffers
@@ -608,7 +609,7 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	if(scene->irradianceEnt && scene->irradianceEnt->active)
 		irradianceMap(fbo_gbuffers.depth_texture, fbo_gbuffers.color_textures[1], camera);
 
-	updateFBO(scene_fbo, 1, true);
+	updateFBO(scene_fbo, 1, true, 1.0);
 
 	scene_fbo.bind();
 	//Render deferred
@@ -670,6 +671,18 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 		AAFX(final_render_fbo.color_textures[0]);
 	else
 		final_render_fbo.color_textures[0]->toViewport();
+
+	if (apply_fog) {
+		glDisable(GL_BLEND);
+		glDisable(GL_DEPTH_TEST);
+		render_fog(scene, camera);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		fog_fbo.color_textures[0]->toViewport();
+		glDisable(GL_BLEND);
+		glDisable(GL_DEPTH_TEST);
+	}
+	
 
 	if(showGbuffers)
 		showgbuffers(camera);
@@ -763,7 +776,9 @@ void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera
 	shader->setUniform("u_apply_irradiance", apply_irr);
 	if (Scene::instance->irradianceEnt && Scene::instance->irradianceEnt->active)
 		shader->setUniform("u_irradiance", irr_map_fbo.color_textures[0], 6);
-	//render a fullscreen quad or sphere
+
+	shader->setUniform("u_far_plane", camera->far_plane);
+
 	mesh->render(GL_TRIANGLES);
 
 	shader->disable();
@@ -824,8 +839,14 @@ void GTR::Renderer::renderInMenu(){
 	ImGui::Combo("Ilumination Mode", &current_mode_ilum, optionsTextIlum, IM_ARRAYSIZE(optionsTextIlum));
 	changeRenderMode();
 	ImGui::Checkbox("Update Shadows", &cast_shadows);
-	ImGui::Checkbox("Show reflection probes", &show_reflection_probes);
-	ImGui::Checkbox("Apply reflections", &apply_reflections);
+	if (ImGui::TreeNode("Reflections")) {
+		ImGui::Checkbox("Show reflection probes", &show_reflection_probes);
+		ImGui::Checkbox("Apply reflections", &apply_reflections);
+	}
+	if (ImGui::TreeNode("Fog")) {
+		ImGui::Checkbox("Apply fog", &apply_fog);
+		ImGui::SliderFloat("Fog density", &fog_density, 0.00001, 0.1);
+	}
 	if (current_mode_pipeline == GTR::ePipelineMode::DEFERRED) {
 		//apply_reflections
 		ImGui::Checkbox("Show gbuffers", &showGbuffers);
@@ -858,7 +879,7 @@ void GTR::Renderer::renderInMenu(){
 
 void GTR::Renderer::renderFinal(Texture* tex){
 	Shader* shader = Shader::Get("tonemapper");
-	updateFBO(final_render_fbo, 1, false);
+	updateFBO(final_render_fbo, 1, false, 1.0);
 	final_render_fbo.bind();
 	shader->enable();
 	shader->setUniform("u_texture", tex, 0);
@@ -974,7 +995,7 @@ void GTR::Renderer::updateIrradianceCache(GTR::Scene* scene) {	//actualitza les 
 }
 
 void GTR::Renderer::irradianceMap(Texture* depth_buffer, Texture* normal_buffer, Camera* camera) {
-	updateFBO(irr_map_fbo, 1, false);
+	updateFBO(irr_map_fbo, 1, false, 1.0);
 	Shader* shader = Shader::Get("irr");
 	if (shader == NULL)
 		return;
@@ -1082,7 +1103,7 @@ void GTR::Renderer::addReflectionsToScene(Camera* camera){
 	Shader* shader = Shader::Get("add_reflections");
 	if (shader == NULL) return;
 	Mesh* mesh = Mesh::getQuad();
-	updateFBO(reflection_fbo, 1, false);
+	updateFBO(reflection_fbo, 1, false, 1.0);
 	reflection_fbo.bind();
 	glClearColor(0, 0, 0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -1121,6 +1142,59 @@ void GTR::Renderer::addReflectionsToScene(Camera* camera){
 
 }
 
+void GTR::Renderer::render_fog(Scene* scene, Camera* camera){
+	updateFBO(fog_fbo, 1, false, 1.0);
+	Shader* shader = Shader::Get("volume_ambient");
+	Mesh* mesh = NULL;
+	fog_fbo.bind();
+	glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
+	// Clear the color and the depth buffer
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	checkGLErrors();
+	shader->enable();
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);//_MINUS_SRC_ALPHA
+	for (int i = 0; i < scene->lights.size(); i++) {
+		LightEntity* light = scene->lights[i];
+		if (light->visible == false) continue;
+		if (light->light_type == DIRECTIONAL) {
+			mesh = Mesh::getQuad();
+			shader = Shader::Get("volume_ambient");
+		}
+		else {
+			Mesh::Get("data/meshes/sphere.obj", false);
+			shader = Shader::Get("volume_geo");
+		}
+		light->uploadUniforms(shader);
+		shader->setUniform("u_iteration", i);
+		shader->setUniform("u_depth_texture", fbo_gbuffers.depth_texture, 2);
+		shader->setUniform("u_camera_position", camera->eye);
+		shader->setUniform("u_near_plane", camera->near_plane);
+		int width = Application::instance->window_width;
+		int height = Application::instance->window_height;
+		shader->setUniform("u_iRes", Vector2(1.0 / (float)width, 1.0 / (float)height));
+		Matrix44 inv_vp = camera->viewprojection_matrix;
+		inv_vp.inverse();
+		shader->setUniform("u_inverse_viewprojection", inv_vp);
+		float t = getTime();
+		shader->setUniform("u_time", t);
+		Matrix44 m;
+		Vector3 pos = light->model.getTranslation();
+		m.setTranslation(pos.x, pos.y, pos.z);
+		m.scale(light->max_dist, light->max_dist, light->max_dist);
+		shader->setUniform("u_model", m);
+		shader->setUniform("u_viewprojection", camera->viewprojection_matrix);
+		shader->setUniform("u_air_density", fog_density);
+		if (Scene::instance != NULL)
+			shader->setUniform("u_light_ambient", Scene::instance->ambient_light);
+		glDisable(GL_DEPTH_TEST);
+		mesh->render(GL_TRIANGLES);
+	}
+	shader->disable();
+	fog_fbo.unbind();
+	glDisable(GL_BLEND);
+}
+
 /********************************************************************************************************************/
 //SSAO computations
 std::vector<Vector3> generateSpherePoints(int num, float radius, bool hemi)
@@ -1156,8 +1230,7 @@ GTR::SSAOFX::SSAOFX(){
 }
 
 void GTR::SSAOFX::compute(Texture* depth_buffer, Texture* normal_buffer, Camera* camera, Texture* output){
-	//FBO* fbo = Texture::getGlobalFBO(output);
-	updateFBO(ao_fbo, 1, false);
+	updateFBO(ao_fbo, 1, false, 1.0);
 	int w = ao_fbo.width; int h = ao_fbo.height;
 	ao_fbo.setTexture(output);
 	ao_fbo.bind();

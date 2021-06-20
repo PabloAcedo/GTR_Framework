@@ -121,7 +121,10 @@ namespace GTR {
 		bool showGbuffers;
 		bool showSSAO;
 
-
+		//volume rendering
+		FBO fog_fbo;
+		bool apply_fog;
+		float fog_density;
 
 		Renderer();
 
@@ -202,6 +205,9 @@ namespace GTR {
 		void renderReflectionProbes(Scene* scene, Camera* camera);
 
 		void addReflectionsToScene(Camera* camera);
+		/**********************************************************************************************/
+		//volume rendering
+		void render_fog(Scene* scene, Camera* camera);
 	};
 
 	Texture* CubemapFromHDRE(const char* filename);

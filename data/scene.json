@@ -98,10 +98,10 @@
 		{
 			"name": "moonlight",
 			"type": "LIGHT",
-			"position": [ 150, 300, 50 ],
-			"light_color": [ 0.2, 0.2, 0.2 ],
+			"position": [ 150, 500, 50 ],
+			"light_color": [ 0.06, 0.06, 0.06 ],
 			"light_type": "directional",
-			"intensity": 1.5,
+			"intensity": 1.0,
 			"area_size": 1500,
 			"max_dist": 1000,
 			"target": [ -80, 0, -50 ]
@@ -113,7 +113,7 @@
 			"light_color":[1,0.02,0.0],
 			"light_type": "point",
 			"max_dist": 70,
-			"intensity":2
+			"intensity":5
 		},
 		{
 			"name":"pointlight2",
@@ -122,7 +122,7 @@
 			"light_color":[1,0.02,0.0],
 			"light_type": "point",
 			"max_dist": 70,
-			"intensity":2
+			"intensity":5
 		},
 		{
 			"name":"spot",
@@ -131,22 +131,10 @@
 			"angle": -45,
 			"light_color":[1,0.9,0.8],
 			"light_type": "spot",
-			"max_dist": 1000.0,
+			"max_dist": 500.0,
 			"intensity":5,
 			"cone_angle":45.0,
 			"spot_exp": 60.0
-		},
-		{
-			"name": "aux2",
-			"type": "LIGHT",
-			"position": [ 150, 300, 50 ],
-			"light_color": [ 0, 0, 0 ],
-			"light_type": "directional",
-			"intensity": 1.5,
-			"area_size": 1500,
-			"max_dist": 1000,
-			"target": [ -80, 0, -50 ],
-			"useful":"no"
 		}
 	]
 }

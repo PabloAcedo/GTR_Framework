@@ -340,6 +340,7 @@ void GTR::LightEntity::uploadUniforms(Shader*& shader) {
 	shader->setUniform("u_spot_exp", spotExp);
 
 	if (light_type != POINT) {
+		shader->setUniform("u_cast_shadow", true);
 		shader->setUniform("u_shadow_bias", this->bias);
 
 		//get the depth texture from the FBO
@@ -353,6 +354,9 @@ void GTR::LightEntity::uploadUniforms(Shader*& shader) {
 
 		//pass it to the shader
 		shader->setUniform("u_shadow_viewproj", shadow_proj);
+	}
+	else {
+		shader->setUniform("u_cast_shadow", false);
 	}
 	
 }
