@@ -857,10 +857,12 @@ void GTR::Renderer::renderInMenu(){
 	if (ImGui::TreeNode("Reflections")) {
 		ImGui::Checkbox("Show reflection probes", &show_reflection_probes);
 		ImGui::Checkbox("Apply reflections", &apply_reflections);
+		ImGui::TreePop();
 	}
 	if (ImGui::TreeNode("Fog")) {
 		ImGui::Checkbox("Apply fog", &apply_fog);
 		ImGui::SliderFloat("Fog density", &fog_density, 0.00001, 0.1);
+		ImGui::TreePop();
 	}
 	if (current_mode_pipeline == GTR::ePipelineMode::DEFERRED) {
 		//apply_reflections
@@ -869,6 +871,7 @@ void GTR::Renderer::renderInMenu(){
 			ImGui::Checkbox("Apply irradiance", &apply_irr);
 			ImGui::Checkbox("Show irradianceTex", &show_irr_tex);
 			ImGui::Checkbox("Show Probes Grid", &showProbesGrid);
+			ImGui::TreePop();
 		}
 		if(ImGui::TreeNode("SSAO")) {
 			ImGui::Checkbox("Apply SSAO", &apply_ssao);
@@ -881,6 +884,7 @@ void GTR::Renderer::renderInMenu(){
 			else {
 				showSSAO = false;
 			}
+			ImGui::TreePop();
 		}
 	}
 	//bloom_threshold
@@ -889,6 +893,7 @@ void GTR::Renderer::renderInMenu(){
 		ImGui::SliderFloat("Bloom threshold", &bloom_threshold, 0.001, 1.5);
 		ImGui::SliderInt("Blur size", &bloom_size, 1, 30);
 		ImGui::SliderFloat("Bloom intensity", &bloom_intensity, 1.0, 30.0);
+		ImGui::TreePop();
 	}
 	if (ImGui::TreeNode("Tonemapper")) {
 		ImGui::Checkbox("Apply tonemap", &apply_tonemap);
@@ -897,7 +902,7 @@ void GTR::Renderer::renderInMenu(){
 			ImGui::SliderFloat("White luminance", &lum_white, 0.5, 1.0);
 			ImGui::SliderFloat("Scale tonemap", &scale_tonemap, 0.001, 5.0);
 		}
-		
+		ImGui::TreePop();
 	}
 }
 
