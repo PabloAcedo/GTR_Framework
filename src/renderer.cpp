@@ -90,6 +90,13 @@ Renderer::Renderer() {
 	applyAA = true;
 	apply_fog = true;
 	fog_density = 0.003;
+	bloom = new FBO();
+	bloom->create(Application::instance->window_width, Application::instance->window_height, 1, GL_RGB, GL_FLOAT);
+	apply_bloom = true;
+	bloom_threshold = 0.7;
+	bloom_size = 10;
+	show_bloom_tex = false;
+	bloom_intensity = 1.0;
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
@@ -609,7 +616,7 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	if(scene->irradianceEnt && scene->irradianceEnt->active)
 		irradianceMap(fbo_gbuffers.depth_texture, fbo_gbuffers.color_textures[1], camera);
 
-	updateFBO(scene_fbo, 1, true, 1.0);
+	updateFBO(scene_fbo, 2, true, 1.0);
 
 	scene_fbo.bind();
 	//Render deferred
@@ -636,8 +643,6 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
 
-	
-
 	//temporal test probes
 	if (scene->irradianceEnt == NULL) {
 		scene->irradianceEnt = new IrradianceEntity();
@@ -655,7 +660,15 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	scene_fbo.unbind();
 
-	renderFinal(scene_fbo.color_textures[0]);
+	if (apply_bloom) {
+		Texture* bloomFX = bloom_effect(scene_fbo.color_textures[1], w, h);
+		renderFinal(bloomFX);
+	}
+	else {
+		renderFinal(scene_fbo.color_textures[0]);
+	}
+	
+	
 	if (apply_reflections) {
 		glDisable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
@@ -678,11 +691,12 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 		render_fog(scene, camera);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		//Texture* foggy_tex = blur_image(fog_fbo.color_textures[0], 10);
+		//foggy_tex->toViewport();
 		fog_fbo.color_textures[0]->toViewport();
 		glDisable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
 	}
-	
 
 	if(showGbuffers)
 		showgbuffers(camera);
@@ -751,6 +765,7 @@ void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera
 	shader->setUniform("u_ssao", ao_map, 5);//apply_ssao
 	shader->setUniform("u_apply_ssao", apply_ssao);
 	shader->setUniform("u_iteration", iteration);
+	shader->setUniform("u_bloom_thr", bloom_threshold);
 	Matrix44 vp_inv = camera->viewprojection_matrix;
 	vp_inv.inverse();
 	//pass the inverse projection of the camera to reconstruct world pos.
@@ -831,7 +846,7 @@ void GTR::Renderer::renderAmbient(Camera* camera){
 /********************************************************************************************************************/
 void GTR::Renderer::renderInMenu(){
 	ImGui::Combo("Pipeline Mode", &current_mode_pipeline, optionsTextPipeline, IM_ARRAYSIZE(optionsTextPipeline));
-	//applyAA
+	//apply_bloom
 	ImGui::Checkbox("Anti Aliasing", &applyAA);
 	if (current_mode_pipeline != GTR::ePipelineMode::DEFERRED) {
 		ImGui::Combo("Render Mode", &current_mode, optionsText, IM_ARRAYSIZE(optionsText));
@@ -850,9 +865,11 @@ void GTR::Renderer::renderInMenu(){
 	if (current_mode_pipeline == GTR::ePipelineMode::DEFERRED) {
 		//apply_reflections
 		ImGui::Checkbox("Show gbuffers", &showGbuffers);
-		ImGui::Checkbox("Apply irradiance", &apply_irr);
-		ImGui::Checkbox("Show irradianceTex", &show_irr_tex);
-		ImGui::Checkbox("Show Probes Grid", &showProbesGrid);
+		if (ImGui::TreeNode("Irradiance")) {
+			ImGui::Checkbox("Apply irradiance", &apply_irr);
+			ImGui::Checkbox("Show irradianceTex", &show_irr_tex);
+			ImGui::Checkbox("Show Probes Grid", &showProbesGrid);
+		}
 		if(ImGui::TreeNode("SSAO")) {
 			ImGui::Checkbox("Apply SSAO", &apply_ssao);
 			if (apply_ssao) {
@@ -865,6 +882,13 @@ void GTR::Renderer::renderInMenu(){
 				showSSAO = false;
 			}
 		}
+	}
+	//bloom_threshold
+	if (ImGui::TreeNode("FX")) {
+		ImGui::Checkbox("Apply bloom", &apply_bloom);
+		ImGui::SliderFloat("Bloom threshold", &bloom_threshold, 0.001, 1.5);
+		ImGui::SliderInt("Blur size", &bloom_size, 1, 30);
+		ImGui::SliderFloat("Bloom intensity", &bloom_intensity, 1.0, 30.0);
 	}
 	if (ImGui::TreeNode("Tonemapper")) {
 		ImGui::Checkbox("Apply tonemap", &apply_tonemap);
@@ -1194,6 +1218,54 @@ void GTR::Renderer::render_fog(Scene* scene, Camera* camera){
 	fog_fbo.unbind();
 	glDisable(GL_BLEND);
 }
+
+Texture* GTR::Renderer::gaussian_blur(Texture* tex, bool horizontal){
+	Shader* shader = Shader::Get("gaussian_blur");
+	Mesh* quad = Mesh::getQuad();
+	updateFBO(blur_fbo, 1, true, 1.0);
+	blur_fbo.bind();
+	shader->enable();
+	shader->setUniform("u_horizontal", horizontal);
+	shader->setUniform("u_texture", tex, 0);
+	quad->render(GL_TRIANGLES);
+	shader->disable();
+	blur_fbo.unbind();
+	return blur_fbo.color_textures[0];
+}
+
+Texture* GTR::Renderer::blur_image(Texture* tex, int iterations){
+	glDisable(GL_BLEND);
+	Texture* tex2 = tex;
+	Texture* blurred_scene = NULL;
+	bool horizontal = true;
+	for (int i = 0; i < iterations; i++) {
+		blurred_scene = gaussian_blur(tex2, horizontal);
+		tex2 = blurred_scene;
+		horizontal = !horizontal;
+	}
+	return blurred_scene;
+}
+
+
+
+Texture* GTR::Renderer::bloom_effect(Texture* tex, int w, int h){
+	Texture* brightness_tex = blur_image(tex, bloom_size);
+	Shader* shader = Shader::Get("bloom");
+	Mesh* mesh = Mesh::getQuad();
+	bloom->bind();
+	glClearColor(0, 0, 0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT);
+	checkGLErrors();
+	shader->enable();
+	shader->setUniform("u_texture", scene_fbo.color_textures[0], 0);
+	shader->setUniform("u_bright_texture", brightness_tex, 1);
+	shader->setUniform("u_bloom_intensity", bloom_intensity);
+	mesh->render(GL_TRIANGLES);
+	shader->disable();
+	bloom->unbind();
+	return bloom->color_textures[0];
+}
+
 
 /********************************************************************************************************************/
 //SSAO computations

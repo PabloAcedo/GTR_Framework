@@ -126,6 +126,15 @@ namespace GTR {
 		bool apply_fog;
 		float fog_density;
 
+		//postpo
+		FBO blur_fbo;
+		FBO* bloom;
+		bool apply_bloom;
+		float bloom_threshold;
+		int bloom_size;
+		bool show_bloom_tex;
+		float bloom_intensity;
+
 		Renderer();
 
 		/**********************************************************************************************/
@@ -208,6 +217,11 @@ namespace GTR {
 		/**********************************************************************************************/
 		//volume rendering
 		void render_fog(Scene* scene, Camera* camera);
+		/**********************************************************************************************/
+		//postpo FX
+		Texture* gaussian_blur(Texture* tex, bool horizontal);
+		Texture* blur_image(Texture* tex, int iterations);
+		Texture* bloom_effect(Texture* blurred_tex, int w, int h);
 	};
 
 	Texture* CubemapFromHDRE(const char* filename);
