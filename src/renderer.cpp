@@ -641,7 +641,7 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 	renderForward(scene, renderCalls_Blending, camera);
 
 	glDisable(GL_BLEND);
-	glDisable(GL_DEPTH_TEST);
+	//glDisable(GL_DEPTH_TEST);
 
 	//temporal test probes
 	if (scene->irradianceEnt == NULL) {
@@ -657,6 +657,8 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	if (show_reflection_probes)
 		renderReflectionProbes(scene, camera);
+
+	glDisable(GL_DEPTH_TEST);
 
 	scene_fbo.unbind();
 
@@ -691,8 +693,6 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 		render_fog(scene, camera);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-		//Texture* foggy_tex = blur_image(fog_fbo.color_textures[0], 10);
-		//foggy_tex->toViewport();
 		fog_fbo.color_textures[0]->toViewport();
 		glDisable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
@@ -997,6 +997,9 @@ void GTR::Renderer::computeProbe(Scene* scene,  sProbe& p){
 
 		//render the scene from this point of view
 		irr_fbo->bind();
+		glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		checkGLErrors();
 		renderForward(scene, renderCalls, &cam);
 		irr_fbo->unbind();
 
