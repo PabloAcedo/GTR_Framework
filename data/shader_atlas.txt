@@ -1616,7 +1616,9 @@ void main()
 
 	vec4 final_color = vec4(0.0);
 	vec3 light_color = gamma_to_linear(u_light_color);
-
+	if(u_iteration == 1){
+		light_color += gamma_to_linear(u_light_ambient);
+	}
 	for(int i = 0; i < SAMPLES; i++){
 		float shadow_factor = 1.0;
 		if(u_cast_shadow)
@@ -1637,7 +1639,7 @@ void main()
 
 		current_pos += ray_offset;
 	}
-
+	final_color.xyz = linear_to_gamma(final_color.xyz);
 	FragColor = final_color;
 }
 

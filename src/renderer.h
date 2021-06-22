@@ -112,6 +112,7 @@ namespace GTR {
 		bool show_reflection_probes;
 		Texture* currentReflection;
 		FBO reflection_fbo;
+		FBO* cRefl_fbo;
 		bool apply_reflections;
 		bool first_it;
 

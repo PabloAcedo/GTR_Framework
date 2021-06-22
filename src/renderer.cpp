@@ -81,6 +81,7 @@ Renderer::Renderer() {
 	probe.sh.coeffs[0].set(1, 0, 0);
 
 	irr_fbo = NULL;
+	cRefl_fbo = NULL;
 	show_irr_tex = false;
 	showProbesGrid = false;
 	apply_irr = true;
@@ -89,14 +90,14 @@ Renderer::Renderer() {
 	first_it = true;
 	applyAA = true;
 	apply_fog = true;
-	fog_density = 0.003;
+	fog_density = 0.007;
 	bloom = new FBO();
 	bloom->create(Application::instance->window_width, Application::instance->window_height, 1, GL_RGB, GL_FLOAT);
 	apply_bloom = true;
-	bloom_threshold = 0.7;
+	bloom_threshold = 0.5;
 	bloom_size = 10;
 	show_bloom_tex = false;
-	bloom_intensity = 1.0;
+	bloom_intensity = 3.0;
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
@@ -854,53 +855,58 @@ void GTR::Renderer::renderInMenu(){
 	ImGui::Combo("Ilumination Mode", &current_mode_ilum, optionsTextIlum, IM_ARRAYSIZE(optionsTextIlum));
 	changeRenderMode();
 	ImGui::Checkbox("Update Shadows", &cast_shadows);
-	if (ImGui::TreeNode("Reflections")) {
-		ImGui::Checkbox("Show reflection probes", &show_reflection_probes);
-		ImGui::Checkbox("Apply reflections", &apply_reflections);
-		ImGui::TreePop();
-	}
-	if (ImGui::TreeNode("Fog")) {
-		ImGui::Checkbox("Apply fog", &apply_fog);
-		ImGui::SliderFloat("Fog density", &fog_density, 0.00001, 0.1);
-		ImGui::TreePop();
-	}
 	if (current_mode_pipeline == GTR::ePipelineMode::DEFERRED) {
 		//apply_reflections
 		ImGui::Checkbox("Show gbuffers", &showGbuffers);
-		if (ImGui::TreeNode("Irradiance")) {
-			ImGui::Checkbox("Apply irradiance", &apply_irr);
-			ImGui::Checkbox("Show irradianceTex", &show_irr_tex);
-			ImGui::Checkbox("Show Probes Grid", &showProbesGrid);
-			ImGui::TreePop();
-		}
-		if(ImGui::TreeNode("SSAO")) {
-			ImGui::Checkbox("Apply SSAO", &apply_ssao);
-			if (apply_ssao) {
-				ImGui::SliderFloat("bias_ao", &ssao.bias_slider, 0.001, 0.6);
-				ImGui::SliderFloat("radius_ao", &ssao.radius_slider, 1.0, 30.0);
-				ImGui::SliderFloat("distance_ao", &ssao.max_distance_slider, 0.01, 1.0);
-				ImGui::Checkbox("Show SSAO map", &showSSAO);
-			}
-			else {
-				showSSAO = false;
-			}
-			ImGui::TreePop();
-		}
 	}
 	//bloom_threshold
 	if (ImGui::TreeNode("FX")) {
-		ImGui::Checkbox("Apply bloom", &apply_bloom);
-		ImGui::SliderFloat("Bloom threshold", &bloom_threshold, 0.001, 1.5);
-		ImGui::SliderInt("Blur size", &bloom_size, 1, 30);
-		ImGui::SliderFloat("Bloom intensity", &bloom_intensity, 1.0, 30.0);
-		ImGui::TreePop();
-	}
-	if (ImGui::TreeNode("Tonemapper")) {
-		ImGui::Checkbox("Apply tonemap", &apply_tonemap);
-		if (apply_tonemap) {
-			ImGui::SliderFloat("Average luminance", &avg_lum, 0.5, 4.0);
-			ImGui::SliderFloat("White luminance", &lum_white, 0.5, 1.0);
-			ImGui::SliderFloat("Scale tonemap", &scale_tonemap, 0.001, 5.0);
+		if (ImGui::TreeNode("Reflections")) {
+			ImGui::Checkbox("Show reflection probes", &show_reflection_probes);
+			ImGui::Checkbox("Apply reflections", &apply_reflections);
+			ImGui::TreePop();
+		}
+		if (current_mode_pipeline == GTR::ePipelineMode::DEFERRED) {
+			if (ImGui::TreeNode("SSAO")) {
+				ImGui::Checkbox("Apply SSAO", &apply_ssao);
+				if (apply_ssao) {
+					ImGui::SliderFloat("bias_ao", &ssao.bias_slider, 0.001, 0.6);
+					ImGui::SliderFloat("radius_ao", &ssao.radius_slider, 1.0, 30.0);
+					ImGui::SliderFloat("distance_ao", &ssao.max_distance_slider, 0.01, 1.0);
+					ImGui::Checkbox("Show SSAO map", &showSSAO);
+				}
+				else {
+					showSSAO = false;
+				}
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Irradiance")) {
+				ImGui::Checkbox("Apply irradiance", &apply_irr);
+				ImGui::Checkbox("Show irradianceTex", &show_irr_tex);
+				ImGui::Checkbox("Show Probes Grid", &showProbesGrid);
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Fog")) {
+				ImGui::Checkbox("Apply fog", &apply_fog);
+				ImGui::SliderFloat("Fog density", &fog_density, 0.00001, 0.1);
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Bloom")) {
+				ImGui::Checkbox("Apply bloom", &apply_bloom);
+				ImGui::SliderFloat("Bloom threshold", &bloom_threshold, 0.001, 1.5);
+				ImGui::SliderInt("Blur size", &bloom_size, 1, 30);
+				ImGui::SliderFloat("Bloom intensity", &bloom_intensity, 1.0, 30.0);
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNode("Tonemapper")) {
+				ImGui::Checkbox("Apply tonemap", &apply_tonemap);
+				if (apply_tonemap) {
+					ImGui::SliderFloat("Average luminance", &avg_lum, 0.5, 4.0);
+					ImGui::SliderFloat("White luminance", &lum_white, 0.5, 1.0);
+					ImGui::SliderFloat("Scale tonemap", &scale_tonemap, 0.001, 5.0);
+				}
+				ImGui::TreePop();
+			}
 		}
 		ImGui::TreePop();
 	}
@@ -997,9 +1003,6 @@ void GTR::Renderer::computeProbe(Scene* scene,  sProbe& p){
 
 		//render the scene from this point of view
 		irr_fbo->bind();
-		glClearColor(scene->background_color.x, scene->background_color.y, scene->background_color.z, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		checkGLErrors();
 		renderForward(scene, renderCalls, &cam);
 		irr_fbo->unbind();
 
@@ -1013,6 +1016,7 @@ void GTR::Renderer::computeProbe(Scene* scene,  sProbe& p){
 
 void GTR::Renderer::computeProbes(Scene* scene) {
 	for (int i = 0; i < scene->irradianceEnt->probes.size(); i++) {
+		std::cout << "Computing probe " << i << " of " << scene->irradianceEnt->probes.size() << std::endl;
 		computeProbe(scene, scene->irradianceEnt->probes[i]);
 	}
 	scene->irradianceEnt->probesToTexture();
@@ -1068,19 +1072,19 @@ void GTR::Renderer::captureReflectionProbe(Scene* scene, reflectionProbeEntity*&
 	Camera* cam = new Camera();
 	//set the fov to 90 and the aspect to 1
 	cam->setPerspective(90, 1, 0.1, 1000);
-	if (!irr_fbo) {
-		irr_fbo = new FBO();
-		irr_fbo->create(64, 64, 1, GL_RGB, GL_FLOAT);
+	if (!cRefl_fbo) {
+		cRefl_fbo = new FBO();
+		cRefl_fbo->create(64, 64, 1, GL_RGB, GL_FLOAT);
 	}
 	collectRenderCalls(scene, NULL);
 	//render the view from every side
 	for (int i = 0; i < 6; ++i)
 	{
 		//assign cubemap face to FBO
-		irr_fbo->setTexture(probe->cubemap, i);
+		cRefl_fbo->setTexture(probe->cubemap, i);
 
 		//bind FBO
-		irr_fbo->bind();
+		cRefl_fbo->bind();
 
 		//render view
 		Vector3 eye = probe->model.getTranslation();
@@ -1094,7 +1098,7 @@ void GTR::Renderer::captureReflectionProbe(Scene* scene, reflectionProbeEntity*&
 		checkGLErrors();
 		renderSkybox(Scene::instance->environment, cam, true);
 		renderForward(scene, renderCalls, cam);
-		irr_fbo->unbind();
+		cRefl_fbo->unbind();
 	}
 
 	//generate the mipmaps

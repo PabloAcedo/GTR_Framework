@@ -15,9 +15,9 @@
   ImGuizmo.cpp
   imgui_demo.cpp
   imgui_impl_opengl3.cpp
-  imgui_impl_sdl.cpp
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\coldet\box_bld.cpp(134,21): warning C4018: '<': signed/unsigned mismatch
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\coldet\coldet.cpp(374,10): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  imgui_impl_sdl.cpp
   imgui_widgets.cpp
   ImSequencer.cpp
   jpgd.cpp
@@ -32,38 +32,36 @@ D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\coldet\coldet.cpp(374,10)
   main.cpp
   material.cpp
   mesh.cpp
-  renderer.cpp
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\framework.cpp(49,4): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\framework.cpp(151,4): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\framework.cpp(184,18): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\framework.cpp(1282,34): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\framework.cpp(1400,32): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\framework.cpp(1405,32): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+  renderer.cpp
   prefab.cpp
   scene.cpp
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\hdre.cpp(140,11): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\hdre.cpp(201,11): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\hdre.cpp(108,12): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\camera.cpp(116,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\camera.cpp(125,13): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\camera.cpp(346,70): warning C4305: 'argument': truncation from 'double' to 'float'
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\camera.cpp(351,69): warning C4305: 'argument': truncation from 'double' to 'float'
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\hdre.cpp(140,11): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\hdre.cpp(201,11): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\hdre.cpp(108,12): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   shader.cpp
   sphericalharmonics.cpp
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\fbo.cpp(112,24): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\fbo.cpp(113,25): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\fbo.cpp(143,24): warning C4018: '<': signed/unsigned mismatch
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\scene.h(14,12): warning C4099: 'cJSON': type name first seen using 'struct' now seen using 'class' (compiling source file ..\..\src\application.cpp)
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cJSON.h(103): message : see declaration of 'cJSON' (compiling source file ..\..\src\application.cpp)
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(137,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(138,20): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(154,55): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\fbo.cpp(112,24): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\fbo.cpp(113,25): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(156,55): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\fbo.cpp(143,24): warning C4018: '<': signed/unsigned mismatch
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(281,20): warning C4018: '<': signed/unsigned mismatch
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(376,36): warning C4244: '*=': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\application.cpp(378,35): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\input.cpp(138,24): warning C4244: '=': conversion from 'float' to 'char', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\input.cpp(146,19): warning C4305: 'initializing': truncation from 'double' to 'float'
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cgltf.h(771,15): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. (compiling source file ..\..\src\gltf_loader.cpp)
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cgltf.h(1005,3): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. (compiling source file ..\..\src\gltf_loader.cpp)
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cgltf.h(1006,3): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. (compiling source file ..\..\src\gltf_loader.cpp)
@@ -73,6 +71,8 @@ D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cgltf.h(1420,3): warning 
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cgltf.h(1965,2): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. (compiling source file ..\..\src\gltf_loader.cpp)
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cgltf.h(1975,2): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. (compiling source file ..\..\src\gltf_loader.cpp)
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cgltf.h(2054,2): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. (compiling source file ..\..\src\gltf_loader.cpp)
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\input.cpp(138,24): warning C4244: '=': conversion from 'float' to 'char', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\input.cpp(146,19): warning C4305: 'initializing': truncation from 'double' to 'float'
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cJSON.h(104,1): warning C4099: 'cJSON': type name first seen using 'class' now seen using 'struct' (compiling source file ..\..\src\gltf_loader.cpp)
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cJSON.h(103): message : see declaration of 'cJSON' (compiling source file ..\..\src\gltf_loader.cpp)
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\gltf_loader.cpp(61,20): warning C4018: '<': signed/unsigned mismatch
@@ -81,14 +81,15 @@ D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\gltf_loader.cpp(114,20): warnin
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\gltf_loader.cpp(141,20): warning C4018: '<': signed/unsigned mismatch
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\gltf_loader.cpp(163,20): warning C4018: '<': signed/unsigned mismatch
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\gltf_loader.cpp(183,21): warning C4018: '<': signed/unsigned mismatch
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\material.cpp(71,9): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\material.cpp(73,75): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+  texture.cpp
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\gltf_loader.cpp(397,22): warning C4018: '<': signed/unsigned mismatch
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\gltf_loader.cpp(426,20): warning C4018: '<': signed/unsigned mismatch
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\gltf_loader.cpp(491,22): warning C4018: '<': signed/unsigned mismatch
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\gltf_loader.cpp(471,2): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  texture.cpp
-  utils.cpp
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\material.cpp(71,9): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\material.cpp(73,75): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\main.cpp(153,46): warning C4244: '=': conversion from 'Sint32' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\main.cpp(188,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\mesh.cpp(295,3): warning C4018: '<': signed/unsigned mismatch
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\mesh.cpp(496,1): warning C4005: 'glGenBuffersARB': macro redefinition
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\visualstudio\libs\include\GL\glew.h(7631): message : see previous definition of 'glGenBuffersARB' (compiling source file ..\..\src\mesh.cpp)
@@ -100,10 +101,9 @@ D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\mesh.cpp(499,1): warning C4005:
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\visualstudio\libs\include\GL\glew.h(7582): message : see previous definition of 'GL_ARRAY_BUFFER_ARB' (compiling source file ..\..\src\mesh.cpp)
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\mesh.cpp(500,1): warning C4005: 'GL_STATIC_DRAW_ARB': macro redefinition
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\visualstudio\libs\include\GL\glew.h(7605): message : see previous definition of 'GL_STATIC_DRAW_ARB' (compiling source file ..\..\src\mesh.cpp)
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\main.cpp(153,46): warning C4244: '=': conversion from 'Sint32' to 'float', possible loss of data
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\main.cpp(188,23): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\mesh.cpp(764,6): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\mesh.cpp(881,12): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  utils.cpp
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\mesh.cpp(1136,50): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\mesh.cpp(1158,5): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\mesh.cpp(1162,5): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
@@ -195,6 +195,8 @@ D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1304,21): warning 
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1310,30): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1344,63): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1344,43): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cJSON.h(104,1): warning C4099: 'cJSON': type name first seen using 'class' now seen using 'struct' (compiling source file ..\..\src\scene.cpp)
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cJSON.h(103): message : see declaration of 'cJSON' (compiling source file ..\..\src\scene.cpp)
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cJSON.h(104,1): warning C4099: 'cJSON': type name first seen using 'class' now seen using 'struct' (compiling source file ..\..\src\prefab.cpp)
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cJSON.h(103): message : see declaration of 'cJSON' (compiling source file ..\..\src\prefab.cpp)
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\prefab.cpp(41,20): warning C4018: '<': signed/unsigned mismatch
@@ -205,8 +207,6 @@ D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\prefab.cpp(108,20): warning C40
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\prefab.cpp(138,20): warning C4018: '<': signed/unsigned mismatch
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\prefab.cpp(170,22): warning C4018: '<': signed/unsigned mismatch
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\prefab.cpp(243,20): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cJSON.h(104,1): warning C4099: 'cJSON': type name first seen using 'class' now seen using 'struct' (compiling source file ..\..\src\scene.cpp)
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\extra\cJSON.h(103): message : see declaration of 'cJSON' (compiling source file ..\..\src\scene.cpp)
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\scene.cpp(27,20): warning C4018: '<': signed/unsigned mismatch
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\scene.cpp(106,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\scene.cpp(107,28): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
@@ -240,6 +240,8 @@ D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\scene.cpp(462,88): warning C424
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\scene.cpp(464,20): warning C4018: '<': signed/unsigned mismatch
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\scene.cpp(508,12): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\scene.cpp(517,12): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\shader.cpp(178,20): warning C4018: '<': signed/unsigned mismatch
+D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\shader.cpp(217,20): warning C4018: '<': signed/unsigned mismatch
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\sphericalharmonics.cpp(26,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\sphericalharmonics.cpp(27,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\sphericalharmonics.cpp(30,27): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
@@ -255,8 +257,6 @@ D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\sphericalharmonics.cpp(102,59):
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\sphericalharmonics.cpp(102,40): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\sphericalharmonics.cpp(123,54): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\scene.cpp(168): warning C4715: 'GTR::Scene::createEntity': not all control paths return a value
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\shader.cpp(178,20): warning C4018: '<': signed/unsigned mismatch
-D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\shader.cpp(217,20): warning C4018: '<': signed/unsigned mismatch
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\utils.cpp(103,13): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\utils.cpp(128,7): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
 D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\utils.cpp(184,20): warning C4018: '<': signed/unsigned mismatch
@@ -375,5 +375,5 @@ LINK : warning LNK4217: symbol '___glewBindSampler' defined in 'glew32s.lib(glew
 LINK : warning LNK4217: symbol '___glewBindVertexArray' defined in 'glew32s.lib(glew.obj)' is imported by 'imgui_impl_opengl3.obj' in function '"bool __cdecl ImGui_ImplOpenGL3_CreateDeviceObjects(void)" (?ImGui_ImplOpenGL3_CreateDeviceObjects@@YA_NXZ)'
 LINK : warning LNK4217: symbol '___glewDeleteVertexArrays' defined in 'glew32s.lib(glew.obj)' is imported by 'imgui_impl_opengl3.obj' in function '"void __cdecl ImGui_ImplOpenGL3_RenderDrawData(struct ImDrawData *)" (?ImGui_ImplOpenGL3_RenderDrawData@@YAXPAUImDrawData@@@Z)'
 LINK : warning LNK4217: symbol '___glewGenVertexArrays' defined in 'glew32s.lib(glew.obj)' is imported by 'imgui_impl_opengl3.obj' in function '"void __cdecl ImGui_ImplOpenGL3_RenderDrawData(struct ImDrawData *)" (?ImGui_ImplOpenGL3_RenderDrawData@@YAXPAUImDrawData@@@Z)'
-glew32s.lib(glew.obj) : warning LNK4099: PDB '' was not found with 'glew32s.lib(glew.obj)' or at ''; linking object as if no debug info
+glew32s.lib(glew.obj) : warning LNK4099: PDB 'vc120.pdb' was not found with 'glew32s.lib(glew.obj)' or at 'D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\vc120.pdb'; linking object as if no debug info
   visualstudio.vcxproj -> D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\framework_debug.exe

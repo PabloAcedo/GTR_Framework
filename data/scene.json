@@ -1,6 +1,6 @@
 {
 	"background_color":[0.01,0.01,0.01],
-	"ambient_light":[0.03,0.03,0.12],
+	"ambient_light":[0.012,0.012,0.0],
 	"environment":"night.hdre",
 	"camera_position":[-300,90,-150],
 	"camera_target":[0,40,0],
@@ -99,9 +99,9 @@
 			"name": "moonlight",
 			"type": "LIGHT",
 			"position": [ 150, 500, 50 ],
-			"light_color": [ 0.06, 0.06, 0.06 ],
+			"light_color": [ 0.30, 0.08, 0.0 ],
 			"light_type": "directional",
-			"intensity": 1.0,
+			"intensity": 0.66,
 			"area_size": 1500,
 			"max_dist": 1000,
 			"target": [ -80, 0, -50 ]
@@ -113,7 +113,7 @@
 			"light_color":[1,0.02,0.0],
 			"light_type": "point",
 			"max_dist": 70,
-			"intensity":5
+			"intensity":3
 		},
 		{
 			"name":"pointlight2",
@@ -122,7 +122,7 @@
 			"light_color":[1,0.02,0.0],
 			"light_type": "point",
 			"max_dist": 70,
-			"intensity":5
+			"intensity":3
 		},
 		{
 			"name":"spot",
@@ -135,6 +135,18 @@
 			"intensity":5,
 			"cone_angle":45.0,
 			"spot_exp": 60.0
+		},
+		{
+			"name": "aux2",
+			"type": "LIGHT",
+			"position": [ 150, 300, 50 ],
+			"light_color": [ 0, 0, 0 ],
+			"light_type": "directional",
+			"intensity": 1.5,
+			"area_size": 1500,
+			"max_dist": 1000,
+			"target": [ -80, 0, -50 ],
+			"useful":"no"
 		}
 	]
 }
