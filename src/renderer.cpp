@@ -181,10 +181,13 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 		if (!renderingShadows) {
 			scene_fbo.unbind();
 			renderFinal(scene_fbo.color_textures[0]);
+			Texture* scene_final_render = NULL;
 			if (applyAA)
-				AAFX(final_render_fbo.color_textures[0]);
+				scene_final_render = AAFX(final_render_fbo.color_textures[0]);
 			else
-				final_render_fbo.color_textures[0]->toViewport();
+				scene_final_render = final_render_fbo.color_textures[0];
+
+			scene_final_render->toViewport();
 		}
 		
 	}
