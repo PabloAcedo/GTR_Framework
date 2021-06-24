@@ -99,8 +99,8 @@ Renderer::Renderer() {
 	show_bloom_tex = false;
 	bloom_intensity = 7.0;
 
-	dof_max_dist = 400.f;
-	dof_min_dist = 1.f;
+	dof_max_dist = 136.f;
+	dof_min_dist = 139.f;
 	apply_dof = true;
 }
 
@@ -935,8 +935,8 @@ void GTR::Renderer::renderInMenu(){
 			if (ImGui::TreeNode("DOF")) {
 				ImGui::Checkbox("Apply DOF", &apply_dof);
 				if (apply_tonemap) {
-					ImGui::SliderFloat("Max distance", &dof_max_dist, 0.9, 1000.0);
-					ImGui::SliderFloat("Min distance", &dof_min_dist, 1.0, 100.0);
+					ImGui::SliderFloat("Max distance", &dof_max_dist, 1.0, 1000.0);
+					ImGui::SliderFloat("Min distance", &dof_min_dist, 1.0, 1000.0);
 				}
 				ImGui::TreePop();
 			}

@@ -1813,11 +1813,11 @@ void main()
 	vec4 in_focus = texture(u_in_focus, uv);
 	vec4 out_focus = texture(u_out_focus, uv);
 
-	/*if(depth >= 1){
+	if(depth >= 1){
 		FragColor = out_focus;
 		return;
-	}*/
-	vec3 focus_point = u_camera_position + u_focus_point;
+	}
+	vec3 focus_point = u_focus_point;//u_camera_position + u_focus_point;
 	float blur = smoothstep(u_min_distance, u_max_distance, abs(world_pos.x - focus_point.x));
 
 	vec4 final_color = mix(in_focus, out_focus, blur);

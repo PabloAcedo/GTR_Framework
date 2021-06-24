@@ -2,7 +2,7 @@
 	"background_color":[0.01,0.01,0.01],
 	"ambient_light":[0.008,0.008,0.0],
 	"environment":"night.hdre",
-	"camera_position":[-300,90,-150],
+	"camera_position":[-300,90,-250],
 	"camera_target":[0,40,0],
 	"camera_fov":60, 
 	"entities":[
@@ -74,7 +74,7 @@
 		{
 			"name": "Focus Point",
 			"type": "BASIC",
-			"position": [201,0,70]
+			"position": [220,0,70]
 		},
 		{
 			"name": "Reflection Probe1",
