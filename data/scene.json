@@ -72,6 +72,11 @@
 			"scale":[50,50,50]
 		},
 		{
+			"name": "Focus Point",
+			"type": "BASIC",
+			"position": [201,0,70]
+		},
+		{
 			"name": "Reflection Probe1",
 			"type": "Rprobe",
 			"position": [ 208, 249, 61 ]
@@ -107,7 +112,7 @@
 			"name": "moonlight",
 			"type": "LIGHT",
 			"position": [ 150, 500, 50 ],
-			"light_color": [ 0.07, 0.05, 0.0 ],
+			"light_color": [ 0.09, 0.09, 0.09 ],
 			"light_type": "directional",
 			"intensity": 0.66,
 			"area_size": 1500,
@@ -121,7 +126,7 @@
 			"light_color":[1,0.02,0.0],
 			"light_type": "point",
 			"max_dist": 70,
-			"intensity":3
+			"intensity":1.8
 		},
 		{
 			"name":"pointlight2",
@@ -130,7 +135,7 @@
 			"light_color":[1,0.02,0.0],
 			"light_type": "point",
 			"max_dist": 70,
-			"intensity":3
+			"intensity":1.8
 		},
 		{
 			"name":"spot",
@@ -140,7 +145,7 @@
 			"light_color":[1,0.9,0.8],
 			"light_type": "spot",
 			"max_dist": 500.0,
-			"intensity":5,
+			"intensity":2.5,
 			"cone_angle":45.0,
 			"spot_exp": 60.0
 		},

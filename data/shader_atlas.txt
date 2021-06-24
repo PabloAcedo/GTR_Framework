@@ -20,6 +20,7 @@ tonemapper quad.vs tonemapper.fs
 add_reflections quad.vs add_reflections.fs
 AAFX quad.vs AAFX.fs
 bloom quad.vs bloom.fs
+DOF quad.vs dof.fs
 
 //irradiance
 probe basic.vs probe.fs
@@ -1143,11 +1144,17 @@ void main()
 	//color = mix(color,vec4(0.0),dist2);
 
 	FragColor = color;
-	float brightness = dot(FragColor.xyz, vec3(0.2126, 0.7152, 0.0722));
-    if(brightness > u_bloom_thr)
+	//float brightness = dot(FragColor.xyz, vec3(0.2126, 0.7152, 0.0722));
+
+	float brightness = max(color.x, max(color.y, color.z));
+	float contribution = max(0, brightness - u_bloom_thr);
+	contribution /= max(brightness, 0.00001);
+	BrightColor = color * contribution;
+
+    /*if(brightness > u_bloom_thr)
         BrightColor = vec4(FragColor.xyz, 1.0);
     else
-        BrightColor = vec4(vec3(0.0), 1.0);
+        BrightColor = vec4(vec3(0.0), 1.0);*/
 	
 }
 
@@ -1641,7 +1648,7 @@ void main()
 
 		current_pos += ray_offset;
 	}
-	final_color.xyz = linear_to_gamma(final_color.xyz);
+	//final_color.xyz = linear_to_gamma(final_color.xyz);
 	FragColor = final_color;
 }
 
@@ -1769,7 +1776,52 @@ void main()
 	NormalColor = normal;
 	OMR = omr;
 	FragColor = decal_color;
-	
-	
 }
 
+\dof.fs
+#version 330 core
+
+in vec2 v_uv;
+
+
+uniform sampler2D u_depth_texture;
+
+uniform sampler2D u_in_focus;
+uniform sampler2D u_out_focus;
+uniform float u_min_distance;
+uniform float u_max_distance;
+uniform vec3 u_focus_point;
+
+uniform mat4 u_inverse_viewprojection;
+uniform vec2 u_iRes;
+uniform vec3 u_camera_position;
+
+out vec4 FragColor;
+
+
+void main()
+{
+	//extract uvs from pixel screenpos. From  [-1 1]to [0 1]
+	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
+
+	float depth = texture( u_depth_texture, uv ).x;
+	
+	vec4 screen_pos = vec4(uv.x*2.0-1.0, uv.y*2.0-1.0, depth*2.0-1.0, 1.0);
+	vec4 proj_worldpos = u_inverse_viewprojection * screen_pos;
+	vec3 world_pos = proj_worldpos.xyz / proj_worldpos.w;
+
+	vec4 in_focus = texture(u_in_focus, uv);
+	vec4 out_focus = texture(u_out_focus, uv);
+
+	/*if(depth >= 1){
+		FragColor = out_focus;
+		return;
+	}*/
+	vec3 focus_point = u_camera_position + u_focus_point;
+	float blur = smoothstep(u_min_distance, u_max_distance, abs(world_pos.x - focus_point.x));
+
+	vec4 final_color = mix(in_focus, out_focus, blur);
+	
+		
+	FragColor = final_color;
+}

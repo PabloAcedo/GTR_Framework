@@ -139,6 +139,11 @@ namespace GTR {
 		//decals
 		FBO decals_fbo;
 
+		//DOF
+		float dof_max_dist;
+		float dof_min_dist;
+		bool apply_dof;
+
 		Renderer();
 
 		/**********************************************************************************************/
@@ -195,7 +200,7 @@ namespace GTR {
 		/**********************************************************************************************/
 		void renderInMenu();
 		void renderFinal(Texture* tex);
-		void AAFX(Texture* tex);
+		Texture* AAFX(Texture* tex);
 		
 		/**********************************************************************************************/
 		//irradiance
@@ -230,6 +235,9 @@ namespace GTR {
 		//Decals
 		void renderDecals(Scene* scene, Camera* camera);
 		void copyFboTextures(FBO& source, FBO& destination, int textures_num);
+		/**********************************************************************************************/
+		//DOF
+		void depthOfField(Texture* in_focus, Texture* out_focus, Camera* camera);
 	};
 
 	Texture* CubemapFromHDRE(const char* filename);

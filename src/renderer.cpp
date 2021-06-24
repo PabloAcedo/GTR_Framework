@@ -67,10 +67,10 @@ Renderer::Renderer() {
 	ilum_mode = GTR::eIlumMode::PBR;
 	ao_map = NULL;
 	showSSAO = false;
-	avg_lum = 0.78;
+	avg_lum = 1.6;
 	lum_white = 1.0;
 	gamma = 2.2;
-	scale_tonemap = 1.0;
+	scale_tonemap = 1.8;
 	apply_tonemap = true;
 	apply_ssao = true;
 	show_reflection_probes = false;
@@ -94,10 +94,14 @@ Renderer::Renderer() {
 	bloom = new FBO();
 	bloom->create(Application::instance->window_width, Application::instance->window_height, 1, GL_RGB, GL_FLOAT);
 	apply_bloom = true;
-	bloom_threshold = 0.5;
-	bloom_size = 10;
+	bloom_threshold = 0.66;
+	bloom_size = 4;
 	show_bloom_tex = false;
-	bloom_intensity = 3.0;
+	bloom_intensity = 7.0;
+
+	dof_max_dist = 400.f;
+	dof_min_dist = 1.f;
+	apply_dof = true;
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
@@ -671,14 +675,14 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	scene_fbo.unbind();
 
+	Texture* bloomFX = NULL;
 	if (apply_bloom) {
-		Texture* bloomFX = bloom_effect(scene_fbo.color_textures[1], w, h);
+		bloomFX = bloom_effect(scene_fbo.color_textures[1], w, h);
 		renderFinal(bloomFX);
 	}
 	else {
 		renderFinal(scene_fbo.color_textures[0]);
 	}
-	
 	
 	if (apply_reflections) {
 		glDisable(GL_BLEND);
@@ -690,22 +694,33 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 		glDisable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
 	}
-
-	if (applyAA)
-		AAFX(final_render_fbo.color_textures[0]);
-	else
-		final_render_fbo.color_textures[0]->toViewport();
-
+	
 	if (apply_fog) {
 		glDisable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
 		render_fog(scene, camera);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-		fog_fbo.color_textures[0]->toViewport();
+		renderFinal(fog_fbo.color_textures[0]);
 		glDisable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
 	}
+
+	Texture* rendered_scene = NULL;
+
+	if (applyAA)
+		rendered_scene = AAFX(final_render_fbo.color_textures[0]);
+	else
+		rendered_scene = final_render_fbo.color_textures[0];
+
+	if (apply_dof) {
+		Texture* blurred_scene = blur_image(rendered_scene, 10);
+		depthOfField(rendered_scene, blurred_scene, camera);
+	}
+	else {
+		rendered_scene->toViewport();
+	}
+	
 
 	if(showGbuffers)
 		showgbuffers(camera);
@@ -917,6 +932,15 @@ void GTR::Renderer::renderInMenu(){
 				}
 				ImGui::TreePop();
 			}
+			if (ImGui::TreeNode("DOF")) {
+				ImGui::Checkbox("Apply DOF", &apply_dof);
+				if (apply_tonemap) {
+					ImGui::SliderFloat("Max distance", &dof_max_dist, 0.9, 1000.0);
+					ImGui::SliderFloat("Min distance", &dof_min_dist, 1.0, 100.0);
+				}
+				ImGui::TreePop();
+			}
+
 		}
 		ImGui::TreePop();
 	}
@@ -937,9 +961,10 @@ void GTR::Renderer::renderFinal(Texture* tex){
 	final_render_fbo.unbind();
 }
 
-void GTR::Renderer::AAFX(Texture* tex){
+Texture* GTR::Renderer::AAFX(Texture* tex){
 	Shader* shader = Shader::Get("AAFX");
-	//Mesh* quad = Mesh::getQuad();
+	FBO* fbo = Texture::getGlobalFBO(tex);
+	fbo->bind();
 	shader->enable();
 	shader->setUniform("u_texture", tex,0);
 	int width = Application::instance->window_width;
@@ -949,6 +974,8 @@ void GTR::Renderer::AAFX(Texture* tex){
 	tex->toViewport(shader);
 	//quad->render(GL_TRIANGLES);
 	shader->disable();
+	fbo->unbind();
+	return fbo->color_textures[0];
 }
 
 /********************************************************************************************************************/
@@ -1264,6 +1291,7 @@ Texture* GTR::Renderer::blur_image(Texture* tex, int iterations){
 		tex2 = blurred_scene;
 		horizontal = !horizontal;
 	}
+	glDisable(GL_BLEND);
 	return blurred_scene;
 }
 
@@ -1347,6 +1375,34 @@ void GTR::Renderer::copyFboTextures(FBO& source, FBO& destination, int textures_
 
 	for (int i = 0; i < textures_num; i++)
 		source.color_textures[i]->copyTo(destination.color_textures[i]);
+}
+
+void GTR::Renderer::depthOfField(Texture* in_focus, Texture* out_focus, Camera* camera){
+	Shader* shader = Shader::Get("DOF");
+	if (shader == NULL) return;
+	Mesh* mesh = Mesh::getQuad();
+
+	shader->enable();
+	shader->setUniform("u_depth_texture", fbo_gbuffers.depth_texture, 3);
+	shader->setUniform("u_in_focus", in_focus, 4);
+	shader->setUniform("u_out_focus", out_focus, 5);
+
+	shader->setUniform("u_min_distance", dof_min_dist);
+	shader->setUniform("u_max_distance", dof_max_dist);
+	shader->setUniform("u_focus_point", Scene::instance->focus_point->model.getTranslation());
+
+	shader->setUniform("u_camera_position", camera->eye);
+
+	int width = Application::instance->window_width;
+	int height = Application::instance->window_height;
+	shader->setUniform("u_iRes", Vector2(1.0 / (float)width, 1.0 / (float)height));
+
+	Matrix44 inv_vp = camera->viewprojection_matrix;
+	inv_vp.inverse();
+	shader->setUniform("u_inverse_viewprojection", inv_vp);
+
+	mesh->render(GL_TRIANGLES);
+	shader->disable();
 }
 
 

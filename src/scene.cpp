@@ -20,6 +20,7 @@ GTR::Scene::Scene()
 	irradianceEnt = NULL;
 	phong = false;
 	instance = this;
+	focus_point = NULL;
 }
 
 void GTR::Scene::clear(){
@@ -167,6 +168,11 @@ GTR::BaseEntity* GTR::Scene::createEntity(std::string type)
 		return new GTR::reflectionProbeEntity();
 	else if (type == "DECAL")
 		return new GTR::DecalEntity();
+	else if (type == "BASIC") {
+		focus_point = new GTR::BaseEntity();
+		return focus_point;
+	}
+		
 }
 
 void GTR::BaseEntity::renderInMenu()

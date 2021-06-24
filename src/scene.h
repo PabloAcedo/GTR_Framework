@@ -194,6 +194,7 @@ namespace GTR {
 
 		std::string filename;
 		std::vector<BaseEntity*> entities;
+		BaseEntity* focus_point;
 
 		void clear();
 		void addEntity(BaseEntity* entity);
