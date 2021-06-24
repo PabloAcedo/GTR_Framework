@@ -165,6 +165,8 @@ GTR::BaseEntity* GTR::Scene::createEntity(std::string type)
 		return new GTR::LightEntity();
 	else if (type == "Rprobe")
 		return new GTR::reflectionProbeEntity();
+	else if (type == "DECAL")
+		return new GTR::DecalEntity();
 }
 
 void GTR::BaseEntity::renderInMenu()
@@ -290,9 +292,13 @@ void GTR::LightEntity::configure(cJSON* json) {
 		area_size = cJSON_GetObjectItem(json, "area_size")->valuedouble;
 	}
 	if (cJSON_GetObjectItem(json, "useful")) {
-		const char* str = cJSON_GetObjectItem(json, "useful")->valuestring;
-		if (str == "no")
+		int str = cJSON_GetObjectItem(json, "useful")->valueint;
+		if (str == 0) {
 			useful = false;
+			render_gui = false;
+		}
+
+			
 	}
 	else {
 		useful = true;
@@ -406,10 +412,11 @@ GTR::IrradianceEntity::IrradianceEntity(){
 	normal_dist = 1.0;
 	bool read_irr_info = read("data/irradianceData/irradiance.bin");
 	if (!read_irr_info) {
-		int fact_dist = 6;
-		dimensions = Vector3(12, 10, 12);
+		int fact_dist = 10;
+		//dimensions = Vector3(12, 10, 12);
+		dimensions = Vector3(20, 10, 20);
 		start_pos.set(-60 * fact_dist, 2, -90 * fact_dist);
-		end_pos.set(100 * fact_dist, 300, 90 * fact_dist);
+		end_pos.set(100 * fact_dist, 350, 90 * fact_dist);
 		delta = (end_pos - start_pos);
 
 		delta.x /= (dimensions[0] - 1);
@@ -544,6 +551,7 @@ bool GTR::IrradianceEntity::read(const char* filename){
 
 /************************************************************************************************************/
 GTR::reflectionProbeEntity::reflectionProbeEntity(){
+	this->entity_type = REFLECTION_PROBE;
 	cubemap = new Texture();
 	cubemap->createCubemap(
 		512, 512,
@@ -553,4 +561,33 @@ GTR::reflectionProbeEntity::reflectionProbeEntity(){
 
 void GTR::reflectionProbeEntity::configure(cJSON* json){
 	Scene::instance->reflectionProbes.push_back(this);
+}
+
+GTR::DecalEntity::DecalEntity(){
+	this->entity_type = DECALL;
+	this->albedo = NULL;
+	has_albedo = false;
+	has_omr = false;
+	has_normal = false;
+}
+
+void GTR::DecalEntity::configure(cJSON* json){
+	if (cJSON_GetObjectItem(json, "albedo"))
+	{
+		const char* filename = cJSON_GetObjectItem(json, "albedo")->valuestring;
+		albedo = Texture::Get(filename, false, false);
+		if (albedo != NULL) has_albedo = true;
+	}
+	if (cJSON_GetObjectItem(json, "normal"))
+	{
+		const char* filename = cJSON_GetObjectItem(json, "normal")->valuestring;
+		normal = Texture::Get(filename, false, false);
+		if (normal != NULL) has_normal = true;
+	}
+	if (cJSON_GetObjectItem(json, "omr"))
+	{
+		const char* filename = cJSON_GetObjectItem(json, "omr")->valuestring;
+		omr = Texture::Get(filename, false, false);
+		if (omr != NULL) has_omr = true;
+	}
 }

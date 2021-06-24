@@ -1,6 +1,6 @@
 {
 	"background_color":[0.01,0.01,0.01],
-	"ambient_light":[0.012,0.012,0.0],
+	"ambient_light":[0.008,0.008,0.0],
 	"environment":"night.hdre",
 	"camera_position":[-300,90,-150],
 	"camera_target":[0,40,0],
@@ -10,7 +10,8 @@
 			"name":"floor",
 			"type":"PREFAB",
 			"filename":"prefabs/floor.glb",
-			"position":[0,-0.1,0]
+			"position":[216,-0.1,0],
+			"scale": [0.42,1.0,0.46]
 		},
 		{
 			"name":"car1",
@@ -18,14 +19,6 @@
 			"filename":"prefabs/gmc/scene.gltf",
 			"position":[-80,0,-100],
 			"angle":-45
-		},
-		{
-			"name":"Mirror",
-			"type":"PREFAB",
-			"filename":"prefabs/ornate_mirror/scene.gltf",
-			"position":[ 169, 80, -14],
-			"angle":90,
-			"scale":[60,60,1]
 		},
 		{
 			"name":"car2",
@@ -64,6 +57,21 @@
 			"scale": [ 0.8, 0.8, 0.8 ]
 		},
 		{
+			"name": "StreetArt",
+			"type": "DECAL",
+			"albedo": "data/textures/grafitti_decal.png",
+			"position": [-240,0,0],
+			"scale":[50,50,50]
+		},
+		{
+			"name": "Puddle",
+			"type": "DECAL",
+			"albedo": "data/textures/charco_decal_albedo.png",
+			"omr": "data/textures/charco_decal_omr.png",
+			"position": [40,0,70],
+			"scale":[50,50,50]
+		},
+		{
 			"name": "Reflection Probe1",
 			"type": "Rprobe",
 			"position": [ 208, 249, 61 ]
@@ -93,13 +101,13 @@
 			"area_size": 1500,
 			"max_dist": 1000,
 			"target": [ -80, 0, -50 ],
-			"useful":"no"
+			"useful":0
 		},
 		{
 			"name": "moonlight",
 			"type": "LIGHT",
 			"position": [ 150, 500, 50 ],
-			"light_color": [ 0.30, 0.08, 0.0 ],
+			"light_color": [ 0.07, 0.05, 0.0 ],
 			"light_type": "directional",
 			"intensity": 0.66,
 			"area_size": 1500,
@@ -146,7 +154,7 @@
 			"area_size": 1500,
 			"max_dist": 1000,
 			"target": [ -80, 0, -50 ],
-			"useful":"no"
+			"useful":0
 		}
 	]
 }

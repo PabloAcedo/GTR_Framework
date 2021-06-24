@@ -136,6 +136,9 @@ namespace GTR {
 		bool show_bloom_tex;
 		float bloom_intensity;
 
+		//decals
+		FBO decals_fbo;
+
 		Renderer();
 
 		/**********************************************************************************************/
@@ -196,7 +199,7 @@ namespace GTR {
 		
 		/**********************************************************************************************/
 		//irradiance
-		void computeProbe(Scene* scene, sProbe& p);
+		void computeProbe(Scene* scene, sProbe& p, int iteration);
 
 		void updateIrradianceCache(GTR::Scene* scene);
 
@@ -223,6 +226,10 @@ namespace GTR {
 		Texture* gaussian_blur(Texture* tex, bool horizontal);
 		Texture* blur_image(Texture* tex, int iterations);
 		Texture* bloom_effect(Texture* blurred_tex, int w, int h);
+		/**********************************************************************************************/
+		//Decals
+		void renderDecals(Scene* scene, Camera* camera);
+		void copyFboTextures(FBO& source, FBO& destination, int textures_num);
 	};
 
 	Texture* CubemapFromHDRE(const char* filename);

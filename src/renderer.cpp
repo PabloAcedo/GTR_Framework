@@ -598,6 +598,14 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	fbo_gbuffers.unbind();
 
+	updateFBO(decals_fbo, 4, true, 1.0);
+	copyFboTextures(fbo_gbuffers, decals_fbo, 3);
+	decals_fbo.bind();
+	fbo_gbuffers.depth_texture->copyTo(NULL);
+	renderDecals(scene, camera);
+	decals_fbo.unbind();
+	copyFboTextures(decals_fbo, fbo_gbuffers, 3);
+
 	//ssao+
 	if (ao_map == NULL || ao_map->width != w || ao_map->height != h) {
 		ao_map = new Texture(w, h, GL_RGB, GL_UNSIGNED_BYTE);
@@ -717,20 +725,22 @@ void GTR::Renderer::showgbuffers(Camera* camera) {
 	int width = Application::instance->window_width;
 	int height = Application::instance->window_height;
 
+	FBO* fbo = &decals_fbo;
+	//FBO* fbo = &fbo_gbuffers;
 	glViewport(0, height*0.5, width * 0.5, height * 0.5);
-	fbo_gbuffers.color_textures[0]->toViewport();
+	fbo->color_textures[0]->toViewport();
 
 	glViewport(width * 0.5, height*0.5, width * 0.5, height * 0.5);
-	fbo_gbuffers.color_textures[1]->toViewport();
+	fbo->color_textures[1]->toViewport();
 
 	glViewport(0, 0, width * 0.5, height * 0.5);
-	fbo_gbuffers.color_textures[2]->toViewport();
+	fbo->color_textures[2]->toViewport();
 
 	glViewport(width * 0.5, 0, width * 0.5, height * 0.5);
 	Shader* shader = Shader::Get("depth");
 	shader->enable();
 	shader->setUniform("u_camera_nearfar", Vector2(camera->near_plane, camera->far_plane));
-	fbo_gbuffers.depth_texture->toViewport(shader);
+	fbo->depth_texture->toViewport(shader);
 	shader->disable();
 
 	glViewport(0, 0, width, height);
@@ -973,7 +983,7 @@ void GTR::Renderer::renderProbe(Vector3 pos, float size, float* coeffs)
 }
 
 
-void GTR::Renderer::computeProbe(Scene* scene,  sProbe& p){
+void GTR::Renderer::computeProbe(Scene* scene,  sProbe& p, int iteration){
 	FloatImage images[6]; //here we will store the six views
 	Camera cam;
 
@@ -987,7 +997,6 @@ void GTR::Renderer::computeProbe(Scene* scene,  sProbe& p){
 		irr_fbo->create(64, 64,1, GL_RGB, GL_FLOAT); //Tamany pot canviar, no ha de ser molt gran
 
 	}		
-
 
 	collectRenderCalls(scene, NULL);	//agafara tots els rc, independentment del que vegi la camera
 
@@ -1011,13 +1020,13 @@ void GTR::Renderer::computeProbe(Scene* scene,  sProbe& p){
 	}
 
 	//compute the coefficients given the six images
-	p.sh = computeSH(images,false);	//falta gamma correcte? 1.0 arbitrari
+	p.sh = computeSH(images,false);	
 }
 
 void GTR::Renderer::computeProbes(Scene* scene) {
 	for (int i = 0; i < scene->irradianceEnt->probes.size(); i++) {
 		std::cout << "Computing probe " << i << " of " << scene->irradianceEnt->probes.size() << std::endl;
-		computeProbe(scene, scene->irradianceEnt->probes[i]);
+		computeProbe(scene, scene->irradianceEnt->probes[i], i);
 	}
 	scene->irradianceEnt->probesToTexture();
 	scene->irradianceEnt->save();
@@ -1278,6 +1287,68 @@ Texture* GTR::Renderer::bloom_effect(Texture* tex, int w, int h){
 	return bloom->color_textures[0];
 }
 
+void GTR::Renderer::renderDecals(Scene* scene, Camera* camera){
+	Shader* shader = Shader::Get("decal");
+	if (shader == NULL) return;
+
+	static Mesh* mesh = NULL;//Mesh::Get("data/meshes/box.ASE", false);
+	if (mesh == NULL) {
+		mesh = new Mesh();
+		mesh->createCube();
+	}
+	
+	shader->enable();
+	shader->setUniform("u_albedo", fbo_gbuffers.color_textures[0], 0);
+	shader->setUniform("u_normal_texture", fbo_gbuffers.color_textures[1], 1);
+	shader->setUniform("u_omr", fbo_gbuffers.color_textures[2], 2);
+	shader->setUniform("u_depth_texture", fbo_gbuffers.depth_texture, 3);
+	shader->setUniform("u_camera_position", camera->eye);
+
+	int width = Application::instance->window_width;
+	int height = Application::instance->window_height;
+	shader->setUniform("u_iRes", Vector2(1.0 / (float)width, 1.0 / (float)height));
+	shader->setUniform("u_viewprojection", camera->viewprojection_matrix);
+	Matrix44 inv_vp = camera->viewprojection_matrix;
+	inv_vp.inverse();
+	shader->setUniform("u_inverse_viewprojection", inv_vp);
+
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+
+	for (int i = 0; i < scene->entities.size(); i++) {
+		if (scene->entities[i]->entity_type != DECALL) {
+			continue;
+		}
+		DecalEntity* decal = (DecalEntity*)scene->entities[i];
+		
+		shader->setUniform("u_model", decal->model);
+
+		Matrix44 m = decal->model;
+		m.inverse();
+
+		shader->setUniform("u_inv_model", m);
+		if(decal->has_albedo)
+			shader->setUniform("u_decal_albedo", decal->albedo, 4);
+		if (decal->has_omr)
+			shader->setUniform("u_decal_omr", decal->omr, 5);
+
+		shader->setUniform("u_has_albedo", decal->has_albedo);
+		shader->setUniform("u_has_omr", decal->has_omr);
+
+		mesh->render(GL_TRIANGLES);
+	}	
+	shader->disable();
+
+}
+
+void GTR::Renderer::copyFboTextures(FBO& source, FBO& destination, int textures_num){
+	if (source.num_color_textures < textures_num || destination.num_color_textures < textures_num)
+		return;
+
+	for (int i = 0; i < textures_num; i++)
+		source.color_textures[i]->copyTo(destination.color_textures[i]);
+}
+
 
 /********************************************************************************************************************/
 //SSAO computations
@@ -1310,7 +1381,7 @@ GTR::SSAOFX::SSAOFX(){
 	points = generateSpherePoints(64, 1.0, true);
 	bias_slider = 0.015;
 	radius_slider = 10.0f;
-	max_distance_slider = 0.13f;
+	max_distance_slider = 0.12f;
 }
 
 void GTR::SSAOFX::compute(Texture* depth_buffer, Texture* normal_buffer, Camera* camera, Texture* output){

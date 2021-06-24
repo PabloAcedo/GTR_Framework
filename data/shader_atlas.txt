@@ -32,6 +32,9 @@ volume_geo basic.vs volume_fog.fs
 //blur
 gaussian_blur quad.vs gaussian_blur.fs
 
+//decals
+decal basic.vs decal.fs
+
 \basic.vs
 
 #version 330 core
@@ -199,7 +202,7 @@ vec3 Irradiance(vec3 wp, vec3 N){
 	vec3 irr_local_pos = wp - u_irr_start + N * u_irr_normal_dist;
 	
 	if(inside(irr_range-1, irr_local_pos) == false){
-		irr_local_pos = irr_range-1;
+		irr_local_pos = irr_range -1;
 	}
 		
 	//irr_local_pos = clamp( irr_local_pos, vec3(0.0), irr_range -1 );
@@ -1479,8 +1482,7 @@ void main()
 
 	if(depth >= 1.0)
 	{
-		FragColor = texture( u_texture, uv );
-		return;
+		discard;
 	}
 	//revert the normalisation during pre-pass
 	vec3 N = texture( u_normal_texture, uv ).xyz*2.0-vec3(1.0);
@@ -1691,12 +1693,83 @@ uniform float u_bloom_intensity;
 out vec4 FragColor;
 
 void main()
-{             
-    vec3 color = texture(u_texture,v_uv).xyz + (texture(u_bright_texture,v_uv).xyz*u_bloom_intensity);
+{   
+	vec3 blurred = texture(u_bright_texture,v_uv).xyz;
+    vec3 color = texture(u_texture,v_uv).xyz;
+	color += blurred*u_bloom_intensity;
     FragColor = vec4(color, 1.0);
 }
 
 
+\decal.fs
+
+#version 330 core
+
+in vec2 v_uv;
 
 
+uniform sampler2D u_depth_texture;
+uniform sampler2D u_normal_texture;
+uniform sampler2D u_albedo;
+uniform sampler2D u_omr;
+
+uniform sampler2D u_decal_albedo;
+uniform sampler2D u_decal_omr;
+//uniform sampler2D u_decal_normal; 
+
+uniform bool u_has_albedo;
+uniform bool u_has_omr;
+
+uniform mat4 u_inverse_viewprojection;
+uniform vec2 u_iRes;
+uniform vec3 u_camera_position;
+
+uniform mat4 u_inv_model;
+
+layout(location = 0) out vec4 FragColor;
+layout(location = 1) out vec4 NormalColor;
+layout(location = 2) out vec4 OMR; //occlussion_metalness_roughness
+
+void main()
+{
+	//extract uvs from pixel screenpos. From  [-1 1]to [0 1]
+	vec2 uv = gl_FragCoord.xy * u_iRes.xy;
+
+	float depth = texture( u_depth_texture, uv ).x;
+	if(depth >= 1)
+		discard;
+
+	vec4 screen_pos = vec4(uv.x*2.0-1.0, uv.y*2.0-1.0, depth*2.0-1.0, 1.0);
+	vec4 proj_worldpos = u_inverse_viewprojection * screen_pos;
+	vec3 world_pos = proj_worldpos.xyz / proj_worldpos.w;
+
+	vec4 decal_color = texture( u_albedo, uv );
+	vec4 normal = texture(u_normal_texture, uv);
+	vec4 omr = texture(u_omr, uv);
+	
+	vec3 local_coord = (u_inv_model*vec4(world_pos,1.0)).xyz;
+	vec2 decal_uv = (local_coord.xz/2.0)+vec2(0.5);
+	if( decal_uv.x < 0.0 || decal_uv.x > 1.0 || decal_uv.y < 0.0 || decal_uv.y > 1.0)
+		discard;
+
+
+	if(u_has_albedo)
+		decal_color = texture(u_decal_albedo, decal_uv);
+
+	if(u_has_omr)
+		omr = texture(u_decal_omr, decal_uv);
+
+	/*if(u_has_normal){
+
+	}*/
+
+	if(decal_color.a < 0.5)
+		discard;
+
+	NormalColor = normal;
+	OMR = omr;
+	FragColor = decal_color;
+	
+	
+}
 

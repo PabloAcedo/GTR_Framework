@@ -40,8 +40,9 @@ namespace GTR {
 		std::string name;
 		eEntityType entity_type;
 		Matrix44 model;
+		bool render_gui;
 		bool visible;
-		BaseEntity() { entity_type = NONE; visible = true; }
+		BaseEntity() { entity_type = NONE; visible = true; render_gui = true; }
 		virtual ~BaseEntity() {}
 		virtual void renderInMenu();
 		virtual void configure(cJSON* json) {}
@@ -144,6 +145,21 @@ namespace GTR {
 
 		void save();
 		bool read(const char* filename);
+	};
+
+	class DecalEntity : public BaseEntity {
+	public:
+		Texture* albedo;
+		Texture* omr;
+		Texture* normal;
+
+		bool has_albedo;
+		bool has_omr;
+		bool has_normal;
+
+		DecalEntity();
+		virtual void configure(cJSON* json);
+
 	};
 
 	//contains all entities of the scene

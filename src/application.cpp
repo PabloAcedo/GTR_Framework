@@ -281,10 +281,13 @@ void Application::renderDebugGUI(void)
 	for (int i = 0; i < scene->entities.size(); ++i)
 	{
 		GTR::BaseEntity* entity = scene->entities[i];
+		if (!entity->render_gui)
+			continue;
 
 		if(selected_entity == entity)
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 1.f, 1.f, 1.0f));
 
+		
 		if (ImGui::TreeNode(entity, entity->name.c_str()))
 		{
 			entity->renderInMenu();
