@@ -83,9 +83,9 @@ D:\Uni\4 Cuarto\Trimestre3\GTR\GTR_Framework\src\renderer.cpp(1506,43): warning 
      Creating library ..\..\framework.lib and object ..\..\framework.exp
 LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
   Generating code
-  53 of 4563 functions ( 1.2%) were compiled, the rest were copied from previous compilation.
+  0 of 4563 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    68 functions had inline decision re-evaluated but remain unchanged
+    0 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
 LINK : warning LNK4286: symbol '___glewDeleteBuffers' defined in 'glew32s.lib(glew.obj)' is imported by 'imgui_impl_opengl3.obj'
 LINK : warning LNK4286: symbol '___glewLinkProgram' defined in 'glew32s.lib(glew.obj)' is imported by 'imgui_impl_opengl3.obj'

@@ -74,7 +74,7 @@
 		{
 			"name": "Focus Point",
 			"type": "BASIC",
-			"position": [220,0,70]
+			"position": [-81,0,70]
 		},
 		{
 			"name": "Reflection Probe1",

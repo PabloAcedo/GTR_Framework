@@ -100,7 +100,7 @@ Renderer::Renderer() {
 	bloom_intensity = 7.0;
 
 	dof_max_dist = 136.f;
-	dof_min_dist = 139.f;
+	dof_min_dist = 105.f;
 	apply_dof = true;
 	apply_chromatic_aberration = true;
 	max_distortion = 2.2;
