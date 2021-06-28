@@ -102,6 +102,8 @@ Renderer::Renderer() {
 	dof_max_dist = 136.f;
 	dof_min_dist = 139.f;
 	apply_dof = true;
+	apply_chromatic_aberration = true;
+	max_distortion = 2.2;
 }
 
 void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera)
@@ -678,6 +680,10 @@ void Renderer::renderDeferred(Scene* scene, std::vector<RenderCall*>& rc, Camera
 
 	scene_fbo.unbind();
 
+	if (apply_chromatic_aberration)
+		chromatic_aberration();
+	
+
 	Texture* bloomFX = NULL;
 	if (apply_bloom) {
 		bloomFX = bloom_effect(scene_fbo.color_textures[1], w, h);
@@ -937,13 +943,15 @@ void GTR::Renderer::renderInMenu(){
 			}
 			if (ImGui::TreeNode("DOF")) {
 				ImGui::Checkbox("Apply DOF", &apply_dof);
-				if (apply_tonemap) {
-					ImGui::SliderFloat("Max distance", &dof_max_dist, 1.0, 1000.0);
-					ImGui::SliderFloat("Min distance", &dof_min_dist, 1.0, 1000.0);
-				}
+				ImGui::SliderFloat("Max distance", &dof_max_dist, 1.0, 1000.0);
+				ImGui::SliderFloat("Min distance", &dof_min_dist, 1.0, 1000.0);
 				ImGui::TreePop();
 			}
-
+			if (ImGui::TreeNode("Chromatic Aberration")) {
+				ImGui::Checkbox("Apply C.A.", &apply_chromatic_aberration);
+				ImGui::SliderFloat("Max distortion", &max_distortion, 1.0, 5.0);
+				ImGui::TreePop();
+			}
 		}
 		ImGui::TreePop();
 	}
@@ -1406,6 +1414,23 @@ void GTR::Renderer::depthOfField(Texture* in_focus, Texture* out_focus, Camera* 
 
 	mesh->render(GL_TRIANGLES);
 	shader->disable();
+}
+
+void GTR::Renderer::chromatic_aberration(){
+	updateFBO(chromatic_fbo, 1, true, 1.0);
+	chromatic_fbo.bind();
+	Shader* shader = Shader::Get("chromatic");
+	Mesh* mesh = Mesh::getQuad();
+	shader->enable();
+	shader->setUniform("u_texture", scene_fbo.color_textures[0], 0);
+	shader->setUniform("u_max_distortion", max_distortion);
+	int width = Application::instance->window_width;
+	int height = Application::instance->window_height;
+	shader->setUniform("u_iRes", Vector2((float)width, (float)height));
+	mesh->render(GL_TRIANGLES);
+	shader->disable();
+	chromatic_fbo.unbind();
+	chromatic_fbo.color_textures[0]->copyTo(scene_fbo.color_textures[0]);
 }
 
 

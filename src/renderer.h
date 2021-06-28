@@ -144,6 +144,10 @@ namespace GTR {
 		float dof_min_dist;
 		bool apply_dof;
 
+		//chromatic aberration
+		FBO chromatic_fbo;
+		bool apply_chromatic_aberration;
+		float max_distortion;
 		Renderer();
 
 		/**********************************************************************************************/
@@ -238,6 +242,9 @@ namespace GTR {
 		/**********************************************************************************************/
 		//DOF
 		void depthOfField(Texture* in_focus, Texture* out_focus, Camera* camera);
+		/**********************************************************************************************/
+		//crhomatic aberration
+		void chromatic_aberration();
 	};
 
 	Texture* CubemapFromHDRE(const char* filename);
