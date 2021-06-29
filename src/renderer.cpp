@@ -100,9 +100,9 @@ Renderer::Renderer() {
 	bloom->create(Application::instance->window_width, Application::instance->window_height, 1, GL_RGB, GL_FLOAT);
 	apply_bloom = true;
 	bloom_threshold = 0.66;
-	bloom_size = 4;
+	bloom_size = 30;
 	show_bloom_tex = false;
-	bloom_intensity = 7.0;
+	bloom_intensity = 1.7;
 
 	dof_max_dist = 136.f;
 	dof_min_dist = 105.f;

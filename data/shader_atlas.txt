@@ -1145,17 +1145,12 @@ void main()
 	//color = mix(color,vec4(0.0),dist2);
 
 	FragColor = color;
-	//float brightness = dot(FragColor.xyz, vec3(0.2126, 0.7152, 0.0722));
+	float brightness = dot(FragColor.xyz, vec3(0.2126, 0.7152, 0.0722));
 
-	float brightness = max(color.x, max(color.y, color.z));
-	float contribution = max(0, brightness - u_bloom_thr);
-	contribution /= max(brightness, 0.00001);
-	BrightColor = color * contribution;
-
-    /*if(brightness > u_bloom_thr)
+    if(brightness > u_bloom_thr)
         BrightColor = vec4(FragColor.xyz, 1.0);
     else
-        BrightColor = vec4(vec3(0.0), 1.0);*/
+        BrightColor = vec4(vec3(0.0), 1.0);
 	
 }
 
