@@ -1248,7 +1248,7 @@ void GTR::Renderer::render_fog(Scene* scene, Camera* camera){
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);//_MINUS_SRC_ALPHA
 	for (int i = 0; i < scene->lights.size(); i++) {
 		LightEntity* light = scene->lights[i];
-		if (light->visible == false) continue;
+		if (light->visible == false || light->useful == false) continue;
 		if (light->light_type == DIRECTIONAL) {
 			mesh = Mesh::getQuad();
 			shader = Shader::Get("volume_ambient");

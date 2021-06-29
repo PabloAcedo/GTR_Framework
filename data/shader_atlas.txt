@@ -1619,7 +1619,11 @@ void main()
 	float dist = length(ray_direction);
 	ray_direction = normalize(ray_direction);
 
-	float step_factor = dist/float(u_max_iterations);
+	int max_iter = u_max_iterations;
+	if(depth >= 1.0 && u_iteration > 1){
+		max_iter = 256;
+	}
+	float step_factor = dist/float(max_iter);
 
 	float air_density = u_air_density;
 
@@ -1631,6 +1635,7 @@ void main()
 	if(u_iteration == 1){
 		light_color += gamma_to_linear(u_light_ambient);
 	}
+	
 	for(int i = 0; i < SAMPLES; i++){
 		float shadow_factor = 1.0;
 		if(u_cast_shadow)
@@ -1644,7 +1649,7 @@ void main()
 		vec4 sample_color = vec4(air_density)*vec4(light_color,1.0)*shadow_factor*att_factor*spotFactor*u_light_intensity;
 		final_color += sample_color*length(ray_offset)*(1.0-final_color.w);
 
-		if(i >= u_max_iterations){
+		if(i >= max_iter){
 			break;
 		}
 
