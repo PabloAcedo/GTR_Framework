@@ -85,12 +85,17 @@ Renderer::Renderer() {
 	show_irr_tex = false;
 	showProbesGrid = false;
 	apply_irr = true;
+
 	currentReflection = NULL;
 	apply_reflections = true;
 	first_it = true;
+
 	applyAA = true;
+
 	apply_fog = true;
 	fog_density = 0.007;
+	vol_iterations = 64;
+
 	bloom = new FBO();
 	bloom->create(Application::instance->window_width, Application::instance->window_height, 1, GL_RGB, GL_FLOAT);
 	apply_bloom = true;
@@ -923,6 +928,7 @@ void GTR::Renderer::renderInMenu(){
 			if (ImGui::TreeNode("Fog")) {
 				ImGui::Checkbox("Apply fog", &apply_fog);
 				ImGui::SliderFloat("Fog density", &fog_density, 0.00001, 0.1);
+				ImGui::SliderInt("Max iterations", &vol_iterations, 32, 512);
 				ImGui::TreePop();
 			}
 			if (ImGui::TreeNode("Bloom")) {
@@ -1250,6 +1256,7 @@ void GTR::Renderer::render_fog(Scene* scene, Camera* camera){
 		}
 		light->uploadUniforms(shader);
 		shader->setUniform("u_iteration", i);
+		shader->setUniform("u_max_iterations", vol_iterations);
 		shader->setUniform("u_depth_texture", fbo_gbuffers.depth_texture, 2);
 		shader->setUniform("u_camera_position", camera->eye);
 		shader->setUniform("u_near_plane", camera->near_plane);

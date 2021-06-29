@@ -126,6 +126,7 @@ namespace GTR {
 		FBO fog_fbo;
 		bool apply_fog;
 		float fog_density;
+		int vol_iterations;
 
 		//postpo
 		FBO blur_fbo;
