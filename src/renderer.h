@@ -106,6 +106,7 @@ namespace GTR {
 		bool show_irr_tex;
 		bool showProbesGrid;
 		bool apply_irr;
+		float irradiance_intensity;
 
 
 		//reflections

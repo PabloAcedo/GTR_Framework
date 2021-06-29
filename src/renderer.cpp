@@ -85,6 +85,7 @@ Renderer::Renderer() {
 	show_irr_tex = false;
 	showProbesGrid = false;
 	apply_irr = true;
+	irradiance_intensity = 0.5;
 
 	currentReflection = NULL;
 	apply_reflections = true;
@@ -806,6 +807,7 @@ void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera
 	shader->setUniform("u_apply_ssao", apply_ssao);
 	shader->setUniform("u_iteration", iteration);
 	shader->setUniform("u_bloom_thr", bloom_threshold);
+	shader->setUniform("u_irr_int", irradiance_intensity);
 	Matrix44 vp_inv = camera->viewprojection_matrix;
 	vp_inv.inverse();
 	//pass the inverse projection of the camera to reconstruct world pos.
@@ -923,6 +925,7 @@ void GTR::Renderer::renderInMenu(){
 				ImGui::Checkbox("Apply irradiance", &apply_irr);
 				ImGui::Checkbox("Show irradianceTex", &show_irr_tex);
 				ImGui::Checkbox("Show Probes Grid", &showProbesGrid);
+				ImGui::SliderFloat("Irradiance density", &irradiance_intensity, 0.01, 1.0);
 				ImGui::TreePop();
 			}
 			if (ImGui::TreeNode("Fog")) {

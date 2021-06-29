@@ -1079,6 +1079,8 @@ uniform sampler2D u_irradiance;
 uniform float u_far_plane;
 uniform float u_bloom_thr;
 
+uniform float u_irr_int;
+
 layout (location = 0) out vec4 FragColor;
 layout (location = 1) out vec4 BrightColor;
 
@@ -1133,7 +1135,7 @@ void main()
 
 	if(u_iteration == 0){
 		if(u_apply_irradiance){
-			color.xyz += texture(u_irradiance, uv).xyz*0.5;
+			color.xyz += texture(u_irradiance, uv).xyz*u_irr_int;
 
 		}
 		color.xyz += material.emission;
