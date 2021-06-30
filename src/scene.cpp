@@ -247,7 +247,6 @@ void GTR::LightEntity::renderInMenu() {
 	BaseEntity::renderInMenu();
 #ifndef SKIP_IMGUI
 	if (visible) {
-		ImGui::Combo("Light Type", (int*)&this->light_type, "POINT\0SPOT\0DIRECTIONAL", 3);
 		ImGui::ColorEdit3("Light Color", color.v);
 		ImGui::SliderFloat("Max distance", &max_dist, 1.0, 5000.0);
 		ImGui::SliderFloat("Intensity", &intensity, 0.0, 50.0);

@@ -755,7 +755,7 @@ void GTR::Renderer::showgbuffers(Camera* camera) {
 	int width = Application::instance->window_width;
 	int height = Application::instance->window_height;
 
-	FBO* fbo = &decals_fbo;
+	FBO* fbo = &fbo_gbuffers;
 	//FBO* fbo = &fbo_gbuffers;
 	glViewport(0, height*0.5, width * 0.5, height * 0.5);
 	fbo->color_textures[0]->toViewport();
@@ -844,9 +844,12 @@ void GTR::Renderer::multipassUniformsDeferred(LightEntity* light, Camera* camera
 }
 
 void GTR::Renderer::multipassDeferred(Camera* camera) {
+	if (Scene::instance->lights.size() == 0) {
+		renderAmbient(camera);
+		return;
+	}
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
-
 	for (int i = 0; i < Scene::instance->lights.size(); i++) {
 		LightEntity* light = Scene::instance->lights[i];
 		multipassUniformsDeferred(light, camera, i);		
@@ -1245,10 +1248,11 @@ void GTR::Renderer::render_fog(Scene* scene, Camera* camera){
 	checkGLErrors();
 	shader->enable();
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE);//_MINUS_SRC_ALPHA
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 	for (int i = 0; i < scene->lights.size(); i++) {
 		LightEntity* light = scene->lights[i];
-		if (light->visible == false || light->useful == false) continue;
+		if (light->useful == false) continue;
+		if (light->visible == false && light->light_type != DIRECTIONAL) continue;
 		if (light->light_type == DIRECTIONAL) {
 			mesh = Mesh::getQuad();
 			shader = Shader::Get("volume_ambient");
