@@ -7,6 +7,10 @@ Developed by Pablo Acedo Vázquez
 Framework by Javi Agenjo: https://github.com/jagenjo/GTR_Framework
 
 
+## Scene
+![alt_text](https://github.com/PabloAcedo/GTR_Framework/blob/master/data/Images/original_scene.PNG)
 
 
+##Scene with DOF and Chromatic Aberration
+![alt_text](https://github.com/PabloAcedo/GTR_Framework/blob/master/data/Images/all_FX.PNG)
 
