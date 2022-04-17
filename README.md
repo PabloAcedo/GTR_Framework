@@ -11,6 +11,6 @@ Framework by Javi Agenjo: https://github.com/jagenjo/GTR_Framework
 ![alt_text](https://github.com/PabloAcedo/GTR_Framework/blob/master/data/Images/original_scene.PNG)
 
 
-##Scene with DOF and Chromatic Aberration
+## Scene with DOF and Chromatic Aberration
 ![alt_text](https://github.com/PabloAcedo/GTR_Framework/blob/master/data/Images/all_FX.PNG)
 
